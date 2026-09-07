@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using MyJobBoard.Api.Services;
 using MyJobBoard.Application.Common.Interfaces;
 using MyJobBoard.Infrastructure.Data;
+using Microsoft.AspNetCore.RateLimiting;
 using MyJobBoard.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -126,19 +127,46 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("Auth", limitOptions =>
+    {
+        limitOptions.PermitLimit = 5;
+        limitOptions.Window = TimeSpan.FromMinutes(1);
+        limitOptions.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+        limitOptions.QueueLimit = 2;
+    });
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
+// Configure Problem Details for Exception Handling
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
+
+// Security Headers Middleware
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+    await next();
+});
+
+// Global Exception Handler
+app.UseExceptionHandler();
 
 // Ensure Database is created and initialized
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await dbContext.Database.EnsureCreatedAsync();
-
 }
 
 // Migrations are handled via EF Core CLI for Postgres.
 
 // HTTP Request Pipeline
+app.UseRateLimiter();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

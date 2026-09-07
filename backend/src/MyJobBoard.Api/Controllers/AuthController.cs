@@ -4,9 +4,12 @@ using Microsoft.AspNetCore.Mvc;
 using MyJobBoard.Api.Services;
 using MyJobBoard.Application.DTOs;
 
+using Microsoft.AspNetCore.RateLimiting;
+
 namespace MyJobBoard.Api.Controllers;
 
 [ApiController]
+[EnableRateLimiting("Auth")]
 public class AuthController : ControllerBase
 {
     private readonly UserManager<IdentityUser> _userManager;
@@ -80,21 +83,33 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("refresh")]
-    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequestDto request)
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequestDto request, [FromServices] MyJobBoard.Infrastructure.Data.ApplicationDbContext dbContext)
     {
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
         {
             return BadRequest(new { error = "Refresh token requis." });
         }
 
-        // In a single-user / simple token scenario, find the current or first user or validate token
-        var user = (await _userManager.GetUserAsync(User)) ?? _userManager.Users.FirstOrDefault();
+        var existingToken = dbContext.UserRefreshTokens.FirstOrDefault(t => t.Token == request.RefreshToken);
+        if (existingToken == null || !existingToken.IsActive)
+        {
+            return Unauthorized(new { error = "Refresh token invalide ou expiré." });
+        }
+
+        var user = await _userManager.FindByIdAsync(existingToken.UserId);
         if (user == null)
         {
             return Unauthorized(new { error = "Session expirée." });
         }
 
+        // Revoke the old token
+        existingToken.Revoked = DateTime.UtcNow;
+        
         var tokens = _jwtTokenService.GenerateTokens(user);
+
+        // Save changes to database (including the revoked token)
+        await dbContext.SaveChangesAsync();
+
         return Ok(tokens);
     }
 

@@ -27,6 +27,7 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>, IApplicatio
     public DbSet<UserSettings> UserSettings => Set<UserSettings>();
     public DbSet<AiCompanySummaryCache> AiCompanySummaryCaches => Set<AiCompanySummaryCache>();
     public DbSet<JobAlert> JobAlerts => Set<JobAlert>();
+    public DbSet<UserRefreshToken> UserRefreshTokens => Set<UserRefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

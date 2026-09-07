@@ -5,16 +5,20 @@ using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using MyJobBoard.Application.DTOs;
+using MyJobBoard.Domain.Entities;
+using MyJobBoard.Infrastructure.Data;
 
 namespace MyJobBoard.Api.Services;
 
 public class JwtTokenService
 {
     private readonly IConfiguration _configuration;
+    private readonly ApplicationDbContext _dbContext;
 
-    public JwtTokenService(IConfiguration configuration)
+    public JwtTokenService(IConfiguration configuration, ApplicationDbContext dbContext)
     {
         _configuration = configuration;
+        _dbContext = dbContext;
     }
 
     public TokenResponseDto GenerateTokens(IdentityUser user)
@@ -45,6 +49,17 @@ public class JwtTokenService
         var accessToken = tokenHandler.WriteToken(token);
 
         var refreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+
+        var userRefreshToken = new UserRefreshToken
+        {
+            Token = refreshToken,
+            UserId = user.Id,
+            Expires = DateTime.UtcNow.AddDays(7),
+            Created = DateTime.UtcNow
+        };
+
+        _dbContext.UserRefreshTokens.Add(userRefreshToken);
+        _dbContext.SaveChanges();
 
         return new TokenResponseDto
         {
