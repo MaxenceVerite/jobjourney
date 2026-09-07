@@ -8,10 +8,12 @@ interface Config {
   };
   
   const productionConfig: Config = {
-    apiUrl: 'https://your-production-api.com', // URL pour l'environnement de production
+    apiUrl: 'https://job-journey-1u0a.onrender.com/', // URL pour l'environnement de production
   };
   
-  const config: Config = process.env.NODE_ENV === 'production' ? productionConfig : developmentConfig;
+  // Utilise import.meta.env avec Vite
+  const isProduction = import.meta.env.MODE === 'production';
+  const config: Config = isProduction ? productionConfig : developmentConfig;
   
   export default config;
   
