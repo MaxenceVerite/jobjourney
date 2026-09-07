@@ -15,7 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. Database & EF Core
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=myjobboard.db";
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(connectionString));
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddScoped<IApplicationDbContext>(provider =>
     provider.GetRequiredService<ApplicationDbContext>());
@@ -134,74 +134,9 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await dbContext.Database.EnsureCreatedAsync();
 
-    // Migrate missing columns if table already existed
-    var sqlCommands = new[]
-    {
-        "ALTER TABLE \"Opportunities\" ADD COLUMN \"ArchiveReason\" TEXT NULL;",
-        "ALTER TABLE \"Opportunities\" ADD COLUMN \"ArchiveFeedback\" TEXT NULL;",
-        "ALTER TABLE \"Opportunities\" ADD COLUMN \"ArchivedDate\" TEXT NULL;",
-        "ALTER TABLE \"Opportunities\" ADD COLUMN \"LastFollowUpDate\" TEXT NULL;",
-        "ALTER TABLE \"Companies\" ADD COLUMN \"Siret\" TEXT NULL;",
-        "ALTER TABLE \"Companies\" ADD COLUMN \"Address\" TEXT NULL;",
-        "ALTER TABLE \"Companies\" ADD COLUMN \"EmployeeCount\" TEXT NULL;",
-        "ALTER TABLE \"Companies\" ADD COLUMN \"Industry\" TEXT NULL;",
-        "ALTER TABLE \"Companies\" ADD COLUMN \"Pitch\" TEXT NULL;",
-        "ALTER TABLE \"Companies\" ADD COLUMN \"Competitors\" TEXT NULL;",
-        "ALTER TABLE \"Companies\" ADD COLUMN \"Culture\" TEXT NULL;",
-        "ALTER TABLE \"Companies\" ADD COLUMN \"InterviewTips\" TEXT NULL;",
-        @"CREATE TABLE IF NOT EXISTS ""AiUsages"" (
-            ""Id"" TEXT NOT NULL CONSTRAINT ""PK_AiUsages"" PRIMARY KEY,
-            ""UserId"" TEXT NOT NULL,
-            ""Date"" TEXT NOT NULL,
-            ""RequestsCount"" INTEGER NOT NULL
-        );",
-        @"CREATE TABLE IF NOT EXISTS ""UserNotifications"" (
-            ""Id"" TEXT NOT NULL CONSTRAINT ""PK_UserNotifications"" PRIMARY KEY,
-            ""UserId"" TEXT NOT NULL,
-            ""Message"" TEXT NOT NULL,
-            ""Type"" TEXT NOT NULL,
-            ""LinkUrl"" TEXT NULL,
-            ""RelatedEntityId"" TEXT NULL,
-            ""IsRead"" INTEGER NOT NULL,
-            ""CreatedDate"" TEXT NOT NULL
-        );",
-        @"CREATE TABLE IF NOT EXISTS ""UserProfiles"" (
-            ""Id"" TEXT NOT NULL CONSTRAINT ""PK_UserProfiles"" PRIMARY KEY,
-            ""UserId"" TEXT NOT NULL,
-            ""FirstName"" TEXT NULL,
-            ""LastName"" TEXT NULL,
-            ""JobTitle"" TEXT NULL,
-            ""ExperienceYears"" REAL NULL,
-            ""SalaryExpectationMin"" REAL NULL,
-            ""SalaryExpectationMax"" REAL NULL,
-            ""RemotePreference"" TEXT NULL,
-            ""LinkedInUrl"" TEXT NULL,
-            ""PortfolioUrl"" TEXT NULL,
-            ""FreeNotes"" TEXT NULL
-        );",
-        @"CREATE TABLE IF NOT EXISTS ""UserSettings"" (
-            ""Id"" TEXT NOT NULL CONSTRAINT ""PK_UserSettings"" PRIMARY KEY,
-            ""UserId"" TEXT NOT NULL,
-            ""AiApiKey"" TEXT NULL,
-            ""FranceTravailClientId"" TEXT NULL,
-            ""FranceTravailClientSecret"" TEXT NULL,
-            ""Theme"" TEXT NULL,
-            ""NotificationsEnabled"" INTEGER NOT NULL
-        );"
-    };
-
-    foreach (var sql in sqlCommands)
-    {
-        try
-        {
-            await dbContext.Database.ExecuteSqlRawAsync(sql);
-        }
-        catch
-        {
-            // Column already exists, ignore
-        }
-    }
 }
+
+// Migrations are handled via EF Core CLI for Postgres.
 
 // HTTP Request Pipeline
 if (app.Environment.IsDevelopment())
