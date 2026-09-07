@@ -22,17 +22,19 @@ import { useTranslation } from "react-i18next";
 interface CreateOpportunityFormProps {
   onClose: () => void;
   onSubmit: () => void;
+  initialState?: EOpportunityState;
 }
 
 const CreateOpportunityForm = ({
   onClose,
   onSubmit,
+  initialState,
 }: CreateOpportunityFormProps) => {
   const [opportunityData, setOpportunityData] = useState<Opportunity>({
     roleTitle: "",
     startDate: new Date(),
     lastUpdateDate: new Date(),
-    state: EOpportunityState.DRAFT,
+    state: initialState || EOpportunityState.DRAFT,
     remoteCondition: RemoteCondition.Office,
   });
 

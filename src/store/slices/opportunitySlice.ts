@@ -304,8 +304,13 @@ const opportunitySlice = createSlice({
           );
         }
       )
-      .addCase(updateOpportunity.pending, (state) => {
-        state.isLoading = true;
+      .addCase(updateOpportunity.pending, (state, action) => {
+        if (action.meta.arg?.opportunity) {
+          const updated = action.meta.arg.opportunity;
+          state.opportunities = state.opportunities.map((item) =>
+            item.id === updated.id ? { ...item, ...updated } : item
+          );
+        }
       })
       .addCase(
         updateOpportunity.rejected,

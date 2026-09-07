@@ -34,7 +34,7 @@ export default function RegisterForm() {
       .then(unwrapResult)
       .then(() => {
         enqueueNotification({
-          message: "Compte MyJobBoard crée avec succès",
+          message: "Compte JobJourney crée avec succès",
           severity: NotificationSeverity.Success,
         });
         navigate("/login");
@@ -44,7 +44,7 @@ export default function RegisterForm() {
   return (
     <Box height="100%"  sx={{ p: "10%", maxWidth: "50vw", borderRadius: 2 }}>
       <Typography component="h1" variant="h5" mb={3} textAlign="center">
-        Créer un compte MyJobBoard
+        Créer un compte JobJourney
       </Typography>
       <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
         <Stack spacing={2}>

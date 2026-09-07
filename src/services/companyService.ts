@@ -1,20 +1,30 @@
-import { getCompanies as getCompaniesApi,
-         createCompany as createCompanyApi } from "../api/myJobBoard/features/companies/companiesApi";
+import {
+  getCompanies as getCompaniesApi,
+  createCompany as createCompanyApi,
+  updateCompany as updateCompanyApi,
+  deleteCompany as deleteCompanyApi,
+  generateCompanySummary as generateCompanySummaryApi
+} from "../api/myJobBoard/features/companies/companiesApi";
 import Company from "../models/opportunities/Company";
 
-const getCompanies = async() => {
+const getCompanies = async () => {
+  return getCompaniesApi();
+};
 
-    return getCompaniesApi();
+const createCompany = async (company: Company) => {
+  return createCompanyApi(company);
+};
 
-}
+const updateCompany = async (company: Company) => {
+  return updateCompanyApi(company);
+};
 
+const deleteCompany = async (id: string) => {
+  return deleteCompanyApi(id);
+};
 
-const createCompany = async(company : Company) => {
-    return createCompanyApi(company);
-}
+const generateCompanySummary = async (companyName: string) => {
+  return generateCompanySummaryApi(companyName);
+};
 
-
-export {
-    getCompanies,
-    createCompany
-}
+export { getCompanies, createCompany, updateCompany, deleteCompany, generateCompanySummary };

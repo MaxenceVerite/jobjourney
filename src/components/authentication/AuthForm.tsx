@@ -43,8 +43,7 @@ const AuthForm = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || "/dashboard";
-  console.log(from);
+  const from = typeof location.state?.from === 'string' ? location.state.from : (location.state?.from?.pathname || "/dashboard");
   const handleLogin = () => {
     dispatch(login(credentials));
   };
@@ -187,10 +186,14 @@ const AuthForm = () => {
           <span>
             Pas encore inscrit?{" "}
             <Link
-              href="#"
+              component="button"
+              type="button"
               variant="body2"
               color="secondary"
-              onClick={() => navigate("/register")}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/register");
+              }}
             >
               Créer un compte
             </Link>{" "}

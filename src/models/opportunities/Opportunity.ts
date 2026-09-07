@@ -16,6 +16,7 @@ export default interface Opportunity extends IAnnotable{
     companyId?: string,
     startDate: Date,
     lastUpdateDate: Date,
+    lastFollowUpDate?: Date,
     state: EOpportunityState,
     relatedApplication?: Application, 
     interviews?: Interview[], 
@@ -23,7 +24,19 @@ export default interface Opportunity extends IAnnotable{
     indicativeSalaryRange?: SalaryRange,
     documents?: OpportunityDocument[],
     userAppreciationLevel?: number,
-    confidenceLevel?: number
+    confidenceLevel?: number,
+    archiveReason?: string,
+    archiveFeedback?: string,
+    archivedDate?: Date
+}
+
+export enum EArchiveReason {
+    ACCEPTED = "ACCEPTED",                     // Offre acceptée 🎉
+    COMPANY_REJECTED = "COMPANY_REJECTED",     // Candidature non retenue par l'entreprise
+    USER_DECLINED = "USER_DECLINED",           // Décliné / Refusé par le candidat
+    GHOSTED = "GHOSTED",                       // Sans réponse / Ghosté
+    POSITION_FROZEN = "POSITION_FROZEN",       // Offre annulée / Gel de poste
+    OTHER = "OTHER"                            // Autre motif
 }
 
 

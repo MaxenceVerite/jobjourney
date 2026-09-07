@@ -27,18 +27,48 @@ import theme from "./theme";
 import { ModalProvider } from "./contexts/ModalContext";
 import GlobalModal from "./components/common/modals/GlobalModal";
 import SheetPage from "./routes/SheetPage";
+import ProfilePage from "./routes/profile/ProfilePage";
+import SettingsPage from "./routes/settings/SettingsPage";
+import { JobBoardPage } from "./routes/jobboard/JobBoardPage";
 
-function App() {
+function AppRoutes() {
   const isConnected = useSelector((state: RootState) => state.auth.isConnected);
-
   const navigate = useNavigate();
   const location = useLocation();
-  useEffect(() => {
-    if (!isConnected) {
-      navigate('/login', { state: { from: location } });
-    }
-  }, [isConnected, navigate]);
 
+  useEffect(() => {
+    if (!isConnected && location.pathname !== '/login' && location.pathname !== '/register') {
+      navigate('/login', { state: { from: location.pathname } });
+    } else if (isConnected && (location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/')) {
+      navigate('/dashboard');
+    }
+  }, [isConnected, navigate, location.pathname]);
+
+  return (
+    <Routes>
+      <Route path="/" element={<AuthLayout />}>
+        <Route path="/login" element={<AuthForm />} />
+        <Route path="/register" element={<RegisterForm />} />
+      </Route>
+      {isConnected && (
+        <Route path="/" element={<Layout />}>
+          <Route path="/dashboard" element={<HomePage />} />
+          <Route path="opportunities" element={<OpportunitiesPage />}>
+            <Route index element={<OpportunitiesListContent />} />
+            <Route path=":id" element={<OpportunityDetailPage />} />
+          </Route>
+          <Route path="/sheets" element={<SheetPage />} />
+          <Route path="/jobboard" element={<JobBoardPage />} />
+          <Route path="/documents" element={<DocumentPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
+      )}
+    </Routes>
+  );
+}
+
+function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -46,25 +76,7 @@ function App() {
         <ModalProvider>
           <GlobalModal />
           <Notifier />
-          <Routes>
-            <Route path="/" element={<AuthLayout />}>
-              <Route path="/login" element={<AuthForm />} />
-              <Route path="/register" element={<RegisterForm />} />
-            </Route>
-            {isConnected && (
-              <Route path="/" element={<Layout />}>
-                <Route path="/dashboard" element={<HomePage />} />
-                <Route path="opportunities" element={<OpportunitiesPage />}>
-                  <Route index element={<OpportunitiesListContent />} />
-                  <Route path=":id" element={<OpportunityDetailPage />} />
-                </Route>
-                <Route path="/sheets" element={<SheetPage />} />
-                <Route path="/documents" element={<DocumentPage />} />
-                <Route path="/profile" element={<HomePage />} />
-              </Route>
-            )
-            }
-          </Routes>
+          <AppRoutes />
         </ModalProvider>
       </AuthProvider>
     </ThemeProvider>

@@ -35,7 +35,7 @@ const AuthLayout = () => {
           maxHeight: '100%'
         })}
       >
-        <Grid lg={6} marginLeft="9%" marginTop="4%" 
+        <Grid item lg={6} marginLeft="9%" marginTop="4%" 
         sx={{
           display: { xs: 'none', md: 'none', lg:'flex'}}
         }

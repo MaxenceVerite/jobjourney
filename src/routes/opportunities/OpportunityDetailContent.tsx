@@ -42,6 +42,14 @@ import DocumentPicker from "../../components/documents/forms/DocumentPicker";
 import OpportunityInterviewCard from "../../components/opportunities/interviews/OpportunityInterviewCard";
 import OpportunityInterviewCardList from "../../components/opportunities/interviews/OpportunityInterviewCardList";
 import PhaseStepper from "../../components/common/inputs/PhaseStepper";
+import ArchiveOpportunityModal from "../../components/opportunities/ArchiveOpportunityModal";
+import ArchiveRoundedIcon from "@mui/icons-material/ArchiveRounded";
+import UnarchiveRoundedIcon from "@mui/icons-material/UnarchiveRounded";
+import { Chip, Alert, AlertTitle, useTheme, alpha } from "@mui/material";
+import {
+  getOpportunityStateLabel,
+  getArchiveReasonLabel,
+} from "../../helpers/opportunityFormatters";
 
 const OpportunityDetailContent = () => {
   const { id } = useParams();
@@ -113,32 +121,84 @@ const OpportunityDetailContent = () => {
     }
   };
 
+  const theme = useTheme();
   const [note, setNote] = useState(opportunity?.freeNotes || "");
-
 
   if (!opportunity || !id) {
     return null;
   }
 
- 
+  const isArchived =
+    opportunity.state === EOpportunityState.ARCHIVED ||
+    opportunity.state === EOpportunityState.REFUSED ||
+    opportunity.state === EOpportunityState.ABORTED;
+
+  const handleOpenArchiveModal = () => {
+    openModal(
+      "Archiver / Clôturer l'opportunité",
+      <ArchiveOpportunityModal
+        opportunity={opportunity}
+        onClose={closeModal}
+        onSuccess={() => {
+          if (id) dispatch(getOpportunity({ id }));
+        }}
+      />
+    );
+  };
+
   return (
     <Grid container xs={12}>
-      <Grid container xs={12} mb={4}>
-        <Grid item xs={6}>
+      {/* Archive Notice Banner if Archived */}
+      {(isArchived || opportunity.archiveReason) && (
+        <Grid item xs={12} mb={3}>
+          <Alert
+            severity={opportunity.state === EOpportunityState.VALIDATED ? "success" : "info"}
+            icon={isArchived ? <ArchiveRoundedIcon /> : undefined}
+            action={
+              <Button
+                color="inherit"
+                size="small"
+                onClick={handleOpenArchiveModal}
+                sx={{ textTransform: "none", fontWeight: 700 }}
+              >
+                Gérer / Restaurer
+              </Button>
+            }
+            sx={{
+              borderRadius: 2.5,
+              alignItems: "center",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+            }}
+          >
+            <AlertTitle sx={{ fontWeight: 700, mb: 0.3 }}>
+              {opportunity.state === EOpportunityState.VALIDATED
+                ? "Offre validée et acceptée"
+                : `Opportunité clôturée • ${getArchiveReasonLabel(opportunity.archiveReason) || getOpportunityStateLabel(opportunity.state)}`}
+            </AlertTitle>
+            {opportunity.archiveFeedback && (
+              <Typography variant="body2" sx={{ whiteSpace: "pre-line", opacity: 0.9 }}>
+                {opportunity.archiveFeedback}
+              </Typography>
+            )}
+          </Alert>
+        </Grid>
+      )}
+
+      <Grid container xs={12} mb={4} alignItems="center" justifyContent="space-between">
+        <Grid item xs={12} sm={7}>
           <Typography
             noWrap
-            fontWeight={500}
+            fontWeight={600}
             variant="h5"
-            color="secondary"
+            color="secondary.main"
             sx={{
-              maxWidth: "30vh",
               "&:hover": {
                 textDecoration: "underline",
                 cursor: "pointer",
               },
             }}
             onClick={(e) => {
-              e.stopPropagation;
+              e.stopPropagation();
               opportunity.companyId
                 ? navigate(`/sheets/companies/${opportunity.companyId}`)
                 : undefined;
@@ -149,17 +209,27 @@ const OpportunityDetailContent = () => {
 
           <Typography
             noWrap
-            fontWeight={500}
-            variant="h6"
-            color="primary"
-            sx={{ maxWidth: "30vh" }}
+            fontWeight={700}
+            variant="h4"
+            color="primary.main"
+            sx={{ mt: 0.5 }}
           >
             {opportunity.roleTitle}
           </Typography>
         </Grid>
-        <Grid item xs={4} />
-        <Grid item xs={2}>
-          <Button color="info" variant="text" startIcon={<ArticleIcon />}>
+
+        <Grid item xs={12} sm={5} display="flex" justifyContent={{ xs: "flex-start", sm: "flex-end" }} gap={1.5} mt={{ xs: 2, sm: 0 }}>
+          <Button
+            variant="outlined"
+            color={isArchived ? "primary" : "inherit"}
+            startIcon={isArchived ? <UnarchiveRoundedIcon /> : <ArchiveRoundedIcon />}
+            onClick={handleOpenArchiveModal}
+            sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
+          >
+            {isArchived ? "Gérer l'archivage" : "Archiver l'offre"}
+          </Button>
+
+          <Button color="info" variant="text" startIcon={<ArticleIcon />} sx={{ textTransform: "none", fontWeight: 600 }}>
             Voir le résumé
           </Button>
         </Grid>
