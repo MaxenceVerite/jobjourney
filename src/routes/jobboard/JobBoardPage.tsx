@@ -204,10 +204,11 @@ export const JobBoardPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column' }}>
-      <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>
-        Recherche d'offres
-      </Typography>
+    <>
+      <Box sx={{ height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column' }}>
+        <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>
+          Recherche d'offres
+        </Typography>
 
       <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
         <TextField 
@@ -430,5 +431,6 @@ export const JobBoardPage: React.FC = () => {
         {snack.message}
       </Alert>
     </Snackbar>
+    </>
   );
 };
