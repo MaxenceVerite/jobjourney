@@ -16,6 +16,7 @@ public class Opportunity
     public DateTime? LastFollowUpDate { get; set; }
     public EOpportunityState State { get; set; } = EOpportunityState.DRAFT;
     public string? FreeNotes { get; set; }
+    public string? AiSummary { get; set; }
     public int? UserAppreciationLevel { get; set; }
     public int? ConfidenceLevel { get; set; }
     public string? UserId { get; set; }

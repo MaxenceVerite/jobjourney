@@ -181,4 +181,58 @@ public class GeminiAiService : IAiService
 
         return textResult ?? "{}";
     }
+    public async Task<string> GenerateOpportunitySummaryAsync(string jsonContext, string userId)
+    {
+        var today = DateTime.UtcNow.Date;
+        AiUsage? usage = null;
+        var apiKey = _settings.GeminiApiKey;
+        if (string.IsNullOrEmpty(apiKey))
+            throw new InvalidOperationException("Gemini API Key is not configured.");
+
+        usage = await _context.AiUsages.FirstOrDefaultAsync(u => u.UserId == userId && u.Date == today);
+        if (usage != null && usage.RequestsCount >= _settings.MaxRequestsPerDay)
+            throw new Exception("AI quota exceeded for today.");
+
+        var systemInstruction = "Tu es un coach carrière expert. Tu reçois des données brutes sur une opportunité d'emploi au format JSON. Tu dois produire un résumé stratégique concis en Markdown, en FRANÇAIS, pour aider le candidat à se préparer pour son prochain échange (entretien ou négociation). Structure ta réponse ainsi :\n\n## 🎯 Points clés de l'offre\n*(résumé ultra-court du poste et de l'entreprise)*\n\n## 💬 Ce qu'il faut retenir des échanges\n*(synthèse des notes et entretiens passés)*\n\n## 🚀 Arguments à valoriser\n*(match entre le profil/CV et l'offre, points forts à mettre en avant)*\n\n## ❓ Questions stratégiques à poser\n*(3 questions pertinentes pour le prochain échange)*\n\nSois concis. Évite les formulations génériques. Adapte ton conseil à l'étape actuelle du process.";
+
+        var requestBody = new
+        {
+            system_instruction = new { parts = new[] { new { text = systemInstruction } } },
+            contents = new[]
+            {
+                new { parts = new[] { new { text = jsonContext } } }
+            }
+        };
+
+        var jsonBody = JsonSerializer.Serialize(requestBody);
+        var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+
+        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={apiKey}";
+        var response = await _httpClient.PostAsync(url, content);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Gemini API Error ({response.StatusCode}): {errorContent}");
+        }
+
+        var responseJson = await response.Content.ReadAsStringAsync();
+        using var jsonDoc = JsonDocument.Parse(responseJson);
+        var textResult = jsonDoc.RootElement
+            .GetProperty("candidates")[0]
+            .GetProperty("content")
+            .GetProperty("parts")[0]
+            .GetProperty("text")
+            .GetString();
+
+        if (usage == null)
+            _context.AiUsages.Add(new AiUsage { Id = Guid.NewGuid(), UserId = userId, Date = today, RequestsCount = 1 });
+        else
+        {
+            usage.RequestsCount++;
+            _context.AiUsages.Update(usage);
+        }
+        await _context.SaveChangesAsync(default);
+
+        return textResult ?? string.Empty;
+    }
 }

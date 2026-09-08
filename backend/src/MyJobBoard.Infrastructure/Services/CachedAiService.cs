@@ -61,6 +61,12 @@ public class CachedAiService : IAiService
         return _innerAiService.ParseLinkedInProfileAsync(profileContent, userId);
     }
 
+    public Task<string> GenerateOpportunitySummaryAsync(string jsonContext, string userId)
+    {
+        // No caching for opportunity summaries — they depend on live notes
+        return _innerAiService.GenerateOpportunitySummaryAsync(jsonContext, userId);
+    }
+
     private static string NormalizeCompanyName(string companyName)
     {
         if (string.IsNullOrWhiteSpace(companyName)) return string.Empty;

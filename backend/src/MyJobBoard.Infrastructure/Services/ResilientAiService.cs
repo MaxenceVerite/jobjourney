@@ -46,4 +46,17 @@ public class ResilientAiService : IAiService
             return await _fallbackService.ParseLinkedInProfileAsync(profileText, userId);
         }
     }
+
+    public async Task<string> GenerateOpportunitySummaryAsync(string jsonContext, string userId)
+    {
+        try
+        {
+            return await _primaryService.GenerateOpportunitySummaryAsync(jsonContext, userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Primary AI service failed for opportunity summary. Falling back to Groq.");
+            return await _fallbackService.GenerateOpportunitySummaryAsync(jsonContext, userId);
+        }
+    }
 }

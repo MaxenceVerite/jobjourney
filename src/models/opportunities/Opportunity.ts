@@ -23,6 +23,7 @@ export default interface Opportunity extends IAnnotable{
     offers?: Offer[]
     indicativeSalaryRange?: SalaryRange,
     documents?: OpportunityDocument[],
+    aiSummary?: string,
     userAppreciationLevel?: number,
     confidenceLevel?: number,
     archiveReason?: string,
@@ -59,6 +60,7 @@ export interface Application extends IAnnotable {
     expectedExperienceInYears?: Range,
     offerBudget?: SalaryRange,
     linkToJobOffer?: string,
+    jobOfferDetails?: string,
 }
 
 

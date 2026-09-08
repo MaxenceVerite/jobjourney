@@ -110,6 +110,7 @@ public class ApplicationDto
     public RangeValue? ExpectedExperienceInYears { get; set; }
     public SalaryRange? OfferBudget { get; set; }
     public string? LinkToJobOffer { get; set; }
+    public string? JobOfferDetails { get; set; }
     public string? FreeNotes { get; set; }
 }
 
@@ -144,4 +145,5 @@ public class OpportunityDto
     public ICollection<InterviewDto>? Interviews { get; set; }
     public ICollection<OfferDto>? Offers { get; set; }
     public ICollection<OpportunityDocumentDto>? Documents { get; set; }
+    public string? AiSummary { get; set; }
 }

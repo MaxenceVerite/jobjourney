@@ -127,4 +127,47 @@ public class GroqAiService : IAiService
 
         return textResult ?? "{}";
     }
+
+    public async Task<string> GenerateOpportunitySummaryAsync(string jsonContext, string userId)
+    {
+        var apiKey = _settings.GroqApiKey;
+        if (string.IsNullOrEmpty(apiKey))
+            throw new InvalidOperationException("Groq API Key is not configured.");
+
+        var systemMessage = "Tu es un coach carrière expert. Tu reçois des données brutes sur une opportunité d'emploi au format JSON. Tu dois produire un résumé stratégique concis en Markdown, en FRANÇAIS. Structure : ## 🎯 Points clés de l'offre / ## 💬 Ce qu'il faut retenir des échanges / ## 🚀 Arguments à valoriser / ## ❓ Questions stratégiques à poser. Sois concis et adapté à l'étape actuelle.";
+
+        var requestBody = new
+        {
+            model = "qwen/qwen3.8-27b",
+            messages = new[]
+            {
+                new { role = "system", content = systemMessage },
+                new { role = "user", content = jsonContext }
+            }
+        };
+
+        var jsonBody = JsonSerializer.Serialize(requestBody);
+        var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.groq.com/openai/v1/chat/completions");
+        request.Headers.Add("Authorization", $"Bearer {apiKey}");
+        request.Content = content;
+
+        var response = await _httpClient.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Groq API Error ({response.StatusCode}): {errorContent}");
+        }
+
+        var responseJson = await response.Content.ReadAsStringAsync();
+        using var jsonDoc = JsonDocument.Parse(responseJson);
+        var textResult = jsonDoc.RootElement
+            .GetProperty("choices")[0]
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString();
+
+        return textResult ?? string.Empty;
+    }
 }

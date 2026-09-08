@@ -29,6 +29,7 @@ public class Application
     public double? OfferBudgetMax { get; set; }
     public Periodicity? OfferBudgetPeriodicity { get; set; }
     public string? LinkToJobOffer { get; set; }
+    public string? JobOfferDetails { get; set; }
     public string? FreeNotes { get; set; }
 }
 

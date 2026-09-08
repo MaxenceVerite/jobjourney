@@ -13,11 +13,16 @@ import {
   alpha,
   Paper,
   Divider,
+  Skeleton,
+  Collapse,
+  CircularProgress,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import {
   Article as ArticleIcon,
+  AutoAwesome as AutoAwesomeIcon,
   Link,
+  RefreshRounded as RefreshIcon,
 } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -30,6 +35,7 @@ import {
   updateOpportunity,
   updateOpportunityDocuments,
 } from "../../store/slices/opportunitySlice";
+import { generateOpportunitySummary } from "../../api/myJobBoard/features/opportunities/opportunitiesApi";
 import { useTranslation } from "react-i18next";
 import { fetchDocuments } from "../../store/slices/documentSlice";
 import ActionableSection from "../../components/common/ActionableSection";
@@ -70,8 +76,8 @@ const OpportunityDetailContent = () => {
     }
   }, [opportunity, dispatch]);
 
-  const [opportunityCompany] = useSelector((state: RootState) =>
-    state.companies.companies.filter((c) => c.id == opportunity?.companyId)
+  const opportunityCompany = useSelector((state: RootState) =>
+    state.companies.companies.find((c) => c.id == opportunity?.companyId)
   );
 
   const opportunityDocuments = useSelector((state: RootState) => {
@@ -98,6 +104,13 @@ const OpportunityDetailContent = () => {
   };
 
   const [note, setNote] = useState("");
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summary, setSummary] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (opportunity?.aiSummary) setSummary(opportunity.aiSummary);
+  }, [opportunity?.aiSummary]);
 
   useEffect(() => {
     if (opportunity?.freeNotes) {
@@ -137,6 +150,22 @@ const OpportunityDetailContent = () => {
         }}
       />
     );
+  };
+
+  const handleGenerateSummary = async () => {
+    if (!id) return;
+    setSummaryLoading(true);
+    setSummaryOpen(true);
+    try {
+      const result = await generateOpportunitySummary(id);
+      setSummary(result);
+      // Refresh the opportunity in Redux store so aiSummary is persisted locally too
+      dispatch(getOpportunity({ id }));
+    } catch (err: any) {
+      setSummary(`> **Erreur lors de la génération.** ${err?.response?.data?.message ?? "Veuillez réessayer."}`);
+    } finally {
+      setSummaryLoading(false);
+    }
   };
 
   return (
@@ -256,16 +285,114 @@ const OpportunityDetailContent = () => {
 
             <Button
               color="info"
-              variant="text"
+              variant={summaryOpen ? "contained" : "text"}
               fullWidth
-              startIcon={<ArticleIcon />}
-              sx={{ textTransform: "none", fontWeight: 600, bgcolor: {xs: alpha(theme.palette.info.main, 0.1), sm: "transparent"} }}
+              startIcon={summaryLoading ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+              onClick={() => {
+                if (summary && !summaryLoading) {
+                  setSummaryOpen((prev) => !prev);
+                } else {
+                  handleGenerateSummary();
+                }
+              }}
+              sx={{ textTransform: "none", fontWeight: 600, bgcolor: summaryOpen ? undefined : {xs: alpha(theme.palette.info.main, 0.1), sm: "transparent"} }}
             >
-              Résumé
+              {summaryLoading ? "Génération..." : summary ? (summaryOpen ? "Masquer le résumé" : "Voir le résumé IA") : "Générer un résumé IA"}
             </Button>
           </Grid>
         </Grid>
       </Box>
+
+      {/* AI Summary Panel */}
+      <Collapse in={summaryOpen} unmountOnExit>
+        <Paper
+          elevation={0}
+          sx={{
+            mb: { xs: 3, md: 4 },
+            p: { xs: 2, sm: 3 },
+            borderRadius: 3,
+            border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
+            bgcolor: alpha(theme.palette.info.main, 0.04),
+            position: "relative",
+            overflow: "hidden",
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "4px",
+              height: "100%",
+              bgcolor: "info.main",
+              borderRadius: "3px 0 0 3px",
+            },
+          }}
+        >
+          <Box display="flex" alignItems="center" gap={1} mb={2}>
+            <AutoAwesomeIcon color="info" fontSize="small" />
+            <Typography variant="subtitle1" fontWeight={700} color="info.main">
+              Résumé stratégique IA
+            </Typography>
+            <Box flexGrow={1} />
+            <Button
+              size="small"
+              startIcon={<RefreshIcon />}
+              onClick={handleGenerateSummary}
+              disabled={summaryLoading}
+              sx={{ textTransform: "none", fontSize: "0.78rem" }}
+            >
+              Regénérer
+            </Button>
+          </Box>
+
+          {summaryLoading ? (
+            <Box>
+              <Skeleton variant="text" width="80%" height={24} />
+              <Skeleton variant="text" width="60%" height={24} />
+              <Skeleton variant="text" width="90%" height={24} sx={{ mb: 2 }} />
+              <Skeleton variant="text" width="70%" height={24} />
+              <Skeleton variant="text" width="85%" height={24} />
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                "& h2": { fontSize: "1rem", fontWeight: 700, mt: 2, mb: 0.5, color: "text.primary" },
+                "& h3": { fontSize: "0.9rem", fontWeight: 600, mt: 1.5, mb: 0.5 },
+                "& ul": { pl: 2.5, mb: 1 },
+                "& li": { mb: 0.3, fontSize: "0.9rem" },
+                "& p": { mb: 1, fontSize: "0.9rem", lineHeight: 1.6 },
+                "& strong": { fontWeight: 700 },
+                "& blockquote": {
+                  borderLeft: `3px solid ${theme.palette.info.main}`,
+                  pl: 2,
+                  ml: 0,
+                  color: "text.secondary",
+                  fontStyle: "italic",
+                },
+              }}
+              dangerouslySetInnerHTML={{
+                __html: summary
+                  ? summary
+                    // Headers
+                    .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+                    .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+                    // Bold
+                    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+                    // Italic
+                    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+                    // Unordered lists
+                    .replace(/^- (.+)$/gm, "<li>$1</li>")
+                    .replace(/(<li>.*<\/li>\n?)+/gs, (m) => `<ul>${m}</ul>`)
+                    // Blockquote
+                    .replace(/^> (.+)$/gm, "<blockquote>$1</blockquote>")
+                    // Paragraphs (double newline)
+                    .replace(/\n\n/g, "</p><p>")
+                    .replace(/^(?!<[hul])(.+)$/gm, (m) => m.startsWith("<") ? m : `<p>${m}</p>`)
+                  : "",
+              }}
+            />
+          )}
+        </Paper>
+      </Collapse>
 
       {/* Stepper Section */}
       <Paper elevation={0} sx={{ p: {xs: 1.5, sm: 3}, mb: {xs: 3, md: 4}, borderRadius: 3, border: "1px solid", borderColor: "divider", bgcolor: "background.paper", overflowX: "auto" }}>

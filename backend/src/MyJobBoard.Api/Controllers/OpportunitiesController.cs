@@ -6,6 +6,7 @@ using MyJobBoard.Application.DTOs;
 using MyJobBoard.Domain.Common;
 using MyJobBoard.Domain.Entities;
 using MyJobBoard.Domain.Enums;
+using System.Text.Json;
 
 namespace MyJobBoard.Api.Controllers;
 
@@ -16,11 +17,13 @@ public class OpportunitiesController : ControllerBase
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAiService _aiService;
 
-    public OpportunitiesController(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public OpportunitiesController(IApplicationDbContext context, ICurrentUserService currentUserService, IAiService aiService)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _aiService = aiService;
     }
 
     [HttpGet]
@@ -99,6 +102,7 @@ public class OpportunitiesController : ControllerBase
                 OfferBudgetMax = dto.RelatedApplication.OfferBudget?.Max,
                 OfferBudgetPeriodicity = dto.RelatedApplication.OfferBudget?.Periodicity,
                 LinkToJobOffer = dto.RelatedApplication.LinkToJobOffer,
+                JobOfferDetails = dto.RelatedApplication.JobOfferDetails,
                 FreeNotes = dto.RelatedApplication.FreeNotes
             };
         }
@@ -219,6 +223,7 @@ public class OpportunitiesController : ControllerBase
             opportunity.RelatedApplication.OfferBudgetMax = dto.RelatedApplication.OfferBudget?.Max;
             opportunity.RelatedApplication.OfferBudgetPeriodicity = dto.RelatedApplication.OfferBudget?.Periodicity;
             opportunity.RelatedApplication.LinkToJobOffer = dto.RelatedApplication.LinkToJobOffer;
+            opportunity.RelatedApplication.JobOfferDetails = dto.RelatedApplication.JobOfferDetails;
             opportunity.RelatedApplication.FreeNotes = dto.RelatedApplication.FreeNotes;
         }
 
@@ -319,6 +324,96 @@ public class OpportunitiesController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    // AI Summary generation
+    [HttpPost("{id:guid}/generate-summary")]
+    public async Task<IActionResult> GenerateSummary(Guid id)
+    {
+        var userId = _currentUserService.UserId;
+
+        var opportunity = await _context.Opportunities
+            .Include(o => o.RelatedApplication)
+            .Include(o => o.Interviews).ThenInclude(i => i.Interviewers).ThenInclude(ii => ii.Interlocutor)
+            .Include(o => o.Offers)
+            .Include(o => o.Documents).ThenInclude(d => d.Document)
+            .Include(o => o.Company)
+            .FirstOrDefaultAsync(o => o.Id == id && (o.UserId == null || o.UserId == userId));
+
+        if (opportunity == null) return NotFound();
+
+        // Build a compact context object for the AI
+        var context = new
+        {
+            etape = opportunity.State.ToString(),
+            poste = opportunity.RoleTitle,
+            localisation = opportunity.Location,
+            teletravail = opportunity.RemoteCondition?.ToString(),
+            salaireIndicatif = opportunity.SalaryRangeMin.HasValue
+                ? $"{opportunity.SalaryRangeMin}–{opportunity.SalaryRangeMax} {opportunity.SalaryRangePeriodicity}"
+                : null,
+            notesGenerales = opportunity.FreeNotes,
+            entreprise = opportunity.Company != null ? new
+            {
+                nom = opportunity.Company.Name,
+                secteur = opportunity.Company.Industry,
+                pitch = opportunity.Company.Pitch,
+                culture = opportunity.Company.Culture,
+                effectif = opportunity.Company.EmployeeCount
+            } : null,
+            offre = opportunity.RelatedApplication != null ? new
+            {
+                type = opportunity.RelatedApplication.Type.ToString(),
+                lienOffre = opportunity.RelatedApplication.LinkToJobOffer,
+                descriptionOffre = opportunity.RelatedApplication.JobOfferDetails,
+                notesCandidat = opportunity.RelatedApplication.FreeNotes,
+                experienceRequise = opportunity.RelatedApplication.ExpectedExperienceYearsMin.HasValue
+                    ? $"{opportunity.RelatedApplication.ExpectedExperienceYearsMin}–{opportunity.RelatedApplication.ExpectedExperienceYearsMax} ans"
+                    : null,
+                budgetOffre = opportunity.RelatedApplication.OfferBudgetMin.HasValue
+                    ? $"{opportunity.RelatedApplication.OfferBudgetMin}–{opportunity.RelatedApplication.OfferBudgetMax}"
+                    : null
+            } : null,
+            entretiens = opportunity.Interviews.Select(i => new
+            {
+                type = i.Type.ToString(),
+                date = i.DueDate.ToString("dd/MM/yyyy"),
+                notes = i.FreeNotes,
+                interlocuteurs = i.Interviewers.Select(ii => new
+                {
+                    nom = $"{ii.Interlocutor?.FirstName} {ii.Interlocutor?.LastName}",
+                    role = ii.Interlocutor?.Role
+                })
+            }),
+            documents = opportunity.Documents.Select(d => new
+            {
+                nom = d.Document?.Name,
+                type = d.Document?.Type.ToString()
+            })
+        };
+
+        var jsonContext = JsonSerializer.Serialize(context, new JsonSerializerOptions
+        {
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+            WriteIndented = false
+        });
+
+        try
+        {
+            var summary = await _aiService.GenerateOpportunitySummaryAsync(jsonContext, userId!);
+
+            // Persist the summary on the opportunity
+            opportunity.AiSummary = summary;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { summary });
+        }
+        catch (Exception ex)
+        {
+            if (ex.Message.Contains("quota exceeded"))
+                return StatusCode(429, new { message = "Quota IA dépassé pour aujourd'hui." });
+            return StatusCode(500, new { message = "Erreur lors de la génération du résumé.", details = ex.Message });
+        }
     }
 
     // Documents association
@@ -422,6 +517,7 @@ public class OpportunitiesController : ControllerBase
                     Periodicity = o.RelatedApplication.OfferBudgetPeriodicity ?? Periodicity.Yearly
                 } : null,
                 LinkToJobOffer = o.RelatedApplication.LinkToJobOffer,
+                JobOfferDetails = o.RelatedApplication.JobOfferDetails,
                 FreeNotes = o.RelatedApplication.FreeNotes
             } : null,
             Interviews = o.Interviews.Select(i => new InterviewDto
@@ -443,7 +539,8 @@ public class OpportunitiesController : ControllerBase
             Documents = o.Documents.Select(d => new OpportunityDocumentDto
             {
                 Id = d.DocumentId
-            }).ToList()
+            }).ToList(),
+            AiSummary = o.AiSummary
         };
     }
 }

@@ -115,6 +115,16 @@ const updateOpportunityInterviewInterlocutors = async(opportunityId: string, int
 }
 
 
+const generateOpportunitySummary = async (opportunityId: string): Promise<string> => {
+    try {
+        const response = await myJobBoardApiClient.post(`${opportunitiesRessourcePath}/${opportunityId}/generate-summary`)
+        return response.data.summary as string;
+    } catch (error) {
+        console.log("Impossible de générer le résumé : " + error)
+        throw error;
+    }
+}
+
 export {
     getOpportunities,
     getOpportunity,
@@ -125,5 +135,6 @@ export {
     deleteInterview,
     updateInterview,
     updateOpportunityDocuments,
-    updateOpportunityInterviewInterlocutors
+    updateOpportunityInterviewInterlocutors,
+    generateOpportunitySummary
 }
