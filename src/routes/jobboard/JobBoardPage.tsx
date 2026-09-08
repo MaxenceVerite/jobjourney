@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { Box, Typography, TextField, Button, Grid, Card, CardContent, CircularProgress, Chip, MenuItem, FormControl, InputLabel, Select, Autocomplete, Pagination } from "@mui/material";
+import { Box, Typography, TextField, Button, Grid, Card, CardContent, CircularProgress, Chip, MenuItem, FormControl, InputLabel, Select, Autocomplete, Pagination, Snackbar, Alert } from "@mui/material";
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { FranceTravailJobOffer, searchOffers, SearchParams } from "../../api/myJobBoard/features/jobBoard/jobBoardApi";
 import { UserProfile, getProfile } from "../../api/myJobBoard/features/profile/profileApi";
 import { createJobAlert, getJobAlerts, JobAlert } from "../../api/myJobBoard/features/jobAlerts/jobAlertsApi";
+import { createCompany } from "../../api/myJobBoard/features/companies/companiesApi";
+import { createOpportunity } from "../../api/myJobBoard/features/opportunities/opportunitiesApi";
+import { ApplicationType, EOpportunityState } from "../../models/opportunities/Opportunity";
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
@@ -41,6 +45,9 @@ export const JobBoardPage: React.FC = () => {
   const [remoteMode, setRemoteMode] = useState("");
   const [educationLevel, setEducationLevel] = useState("");
   const [page, setPage] = useState(1);
+  const [creatingOpp, setCreatingOpp] = useState(false);
+  const [snack, setSnack] = useState<{open: boolean; message: string; severity: "success" | "error"}>({ open: false, message: "", severity: "success" });
+  const navigate = useNavigate();
   
   // City Search
   const [cityOptions, setCityOptions] = useState<any[]>([]);
@@ -139,6 +146,52 @@ export const JobBoardPage: React.FC = () => {
     } catch (e) {
       console.error(e);
       alert("Erreur lors de la sauvegarde.");
+    }
+  };
+
+  const handleCreateOpportunity = async (offer: FranceTravailJobOffer) => {
+    setCreatingOpp(true);
+    try {
+      let companyId: string | undefined = undefined;
+
+      // Step 1: Create company if named
+      if (offer.entreprise?.nom) {
+        const createdCompany = await createCompany({ name: offer.entreprise.nom });
+        companyId = createdCompany.id;
+      }
+
+      // Step 2: Build job offer details string
+      const jobOfferDetails = [
+        offer.description,
+        offer.salaire?.libelle ? `\n\nSalaire : ${offer.salaire.libelle}` : "",
+        offer.salaire?.commentaire ? `\n${offer.salaire.commentaire}` : "",
+        offer.experienceLibelle ? `\nExpérience requise : ${offer.experienceLibelle}` : "",
+        offer.typeContratLibelle ? `\nType de contrat : ${offer.typeContratLibelle}` : "",
+        offer.origineOffre?.urlOrigine ? `\n\nOffre originale : ${offer.origineOffre.urlOrigine}` : "",
+      ].join("").trim();
+
+      // Step 3: Create opportunity pre-filled with all offer data
+      const newOpportunity = await createOpportunity({
+        roleTitle: offer.intitule,
+        startDate: new Date(),
+        lastUpdateDate: new Date(),
+        state: EOpportunityState.APPLIED,
+        companyId,
+        location: offer.lieuTravail?.libelle,
+        relatedApplication: {
+          type: ApplicationType.JobOffer,
+          linkToJobOffer: offer.origineOffre?.urlOrigine,
+          jobOfferDetails,
+        },
+      });
+
+      setSnack({ open: true, message: "Opportunité créée avec succès !", severity: "success" });
+      setTimeout(() => navigate(`/opportunities/${newOpportunity.id}`), 700);
+    } catch (err) {
+      console.error(err);
+      setSnack({ open: true, message: "Erreur lors de la création de l'opportunité.", severity: "error" });
+    } finally {
+      setCreatingOpp(false);
     }
   };
 
@@ -337,8 +390,14 @@ export const JobBoardPage: React.FC = () => {
                       {renderDistance(selectedOffer)}
                     </Box>
                   </Box>
-                  <Button variant="contained" color="secondary" startIcon={<AddIcon />}>
-                    Créer Opportunité
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    startIcon={creatingOpp ? <CircularProgress size={16} color="inherit" /> : <AddIcon />}
+                    disabled={creatingOpp}
+                    onClick={() => handleCreateOpportunity(selectedOffer)}
+                  >
+                    {creatingOpp ? "Création..." : "Créer Opportunité"}
                   </Button>
                 </Box>
                 <Box sx={{ p: 3, overflowY: 'auto', flexGrow: 1 }}>
@@ -360,5 +419,16 @@ export const JobBoardPage: React.FC = () => {
         </Grid>
       </Grid>
     </Box>
+
+    <Snackbar
+      open={snack.open}
+      autoHideDuration={4000}
+      onClose={() => setSnack(prev => ({ ...prev, open: false }))}
+      anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+    >
+      <Alert severity={snack.severity} variant="filled" onClose={() => setSnack(prev => ({ ...prev, open: false }))}>
+        {snack.message}
+      </Alert>
+    </Snackbar>
   );
 };
