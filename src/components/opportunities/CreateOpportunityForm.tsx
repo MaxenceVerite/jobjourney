@@ -88,7 +88,7 @@ const CreateOpportunityForm = ({
         >
           {Object.values(RemoteCondition).map((condition) => (
             <MenuItem key={condition} value={condition}>
-              {t(condition)}
+              {t(`RemoteCondition.${condition}`)}
             </MenuItem>
           ))}
         </TextField>

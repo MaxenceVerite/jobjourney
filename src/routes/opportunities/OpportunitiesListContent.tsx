@@ -13,9 +13,9 @@ import {
   useTheme,
   alpha,
 } from "@mui/material";
-
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getOpportunities } from "../../store/slices/opportunitySlice";
 import { RootState } from "../../store/store";
 
@@ -41,6 +41,7 @@ const OpportunitiesListContent = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { openModal, closeModal } = useModal();
+  const { t } = useTranslation();
 
   const [viewMode, setViewMode] = useState<"kanban" | "list">(() => {
     return (localStorage.getItem("myjobboard_opportunities_view") as "kanban" | "list") || "kanban";
@@ -188,9 +189,9 @@ const OpportunitiesListContent = () => {
             }}
           >
             <MenuItem value="ALL">Tous les modes</MenuItem>
-            <MenuItem value={RemoteCondition.Remote}>Remote</MenuItem>
-            <MenuItem value={RemoteCondition.Hybrid}>Hybride</MenuItem>
-            <MenuItem value={RemoteCondition.Office}>Présentiel</MenuItem>
+            <MenuItem value={RemoteCondition.Remote}>{t(`RemoteCondition.${RemoteCondition.Remote}`)}</MenuItem>
+            <MenuItem value={RemoteCondition.Hybrid}>{t(`RemoteCondition.${RemoteCondition.Hybrid}`)}</MenuItem>
+            <MenuItem value={RemoteCondition.Office}>{t(`RemoteCondition.${RemoteCondition.Office}`)}</MenuItem>
           </TextField>
 
           {searchQuery && (

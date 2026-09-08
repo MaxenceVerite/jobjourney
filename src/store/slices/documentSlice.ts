@@ -43,9 +43,6 @@ export const uploadDocument = createAsyncThunk(
   async (payload: { type: DocumentType; file: File; customName?: string }, thunkAPI) => {
     try {
       const document = await documentService.uploadDocument(payload.file, payload.type, payload.customName);
-
-      await thunkAPI.dispatch(fetchDocuments());
-
       return document;
     } catch (error) {
       return thunkAPI.rejectWithValue('Erreur lors du téléversement du document');
@@ -114,12 +111,11 @@ const documentSlice = createSlice({
 
         state.documents = state.documents.filter(doc => doc.id !== action.payload);
       })
+      .addCase(uploadDocument.fulfilled, (state, action: PayloadAction<Document>) => {
+        state.documents.push(action.payload);
+      })
       .addCase(updateDocument.fulfilled, (state, action: PayloadAction<Document>) => {
         state.documents = state.documents.map(doc => doc.id === action.payload.id? action.payload : doc);
-      })
-      .addCase(updateDocument.pending, (state) => {
-        state.isLoading = true;
-     
       })
       .addCase(updateDocument.rejected, (state, action) => {
         state.isLoading = false;

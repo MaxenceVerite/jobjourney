@@ -268,9 +268,6 @@ const opportunitySlice = createSlice({
       .addCase(deleteOpportunity.fulfilled, (state) => {
         state.isLoading = false;
       })
-      .addCase(deleteOpportunity.pending, (state) => {
-        state.isLoading = true;
-      })
       .addCase(
         deleteOpportunity.rejected,
         (state, action: PayloadAction<any>) => {
@@ -285,9 +282,6 @@ const opportunitySlice = createSlice({
           state.opportunities.push(action.payload);
         }
       )
-      .addCase(createOpportunity.pending, (state) => {
-        state.isLoading = true;
-      })
       .addCase(
         createOpportunity.rejected,
         (state, action: PayloadAction<any>) => {
@@ -335,10 +329,7 @@ const opportunitySlice = createSlice({
           };
           state.opportunities[opportunityIndex] = updatedOpportunity;
         }
-      })
-      .addCase(createInterview.pending, (state) => {
-        state.isLoading = true;
-      })
+      )
       .addCase(
         createInterview.rejected,
         (state, action: PayloadAction<any>) => {
@@ -362,9 +353,6 @@ const opportunitySlice = createSlice({
         }
         state.isLoading = false;
       })
-      .addCase(updateInterview.pending, (state) => {
-        state.isLoading = true;
-      })
       .addCase(updateInterview.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
@@ -382,9 +370,6 @@ const opportunitySlice = createSlice({
         }
         state.isLoading = false;
       })
-      .addCase(deleteInterview.pending, (state) => {
-        state.isLoading = true;
-      })
       .addCase(deleteInterview.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
@@ -399,9 +384,6 @@ const opportunitySlice = createSlice({
         }
 
         state.isLoading = false;
-      })
-      .addCase(updateOpportunityDocuments.pending, (state) => {
-        state.isLoading = true;
       })
       .addCase(updateOpportunityDocuments.rejected, (state, action) => {
         state.isLoading = false;
@@ -425,9 +407,6 @@ const opportunitySlice = createSlice({
           state.isLoading = false;
         }
       )
-      .addCase(updateOpportunityInterviewInterlocutors.pending, (state) => {
-        state.isLoading = true;
-      })
       .addCase(
         updateOpportunityInterviewInterlocutors.rejected,
         (state, action) => {

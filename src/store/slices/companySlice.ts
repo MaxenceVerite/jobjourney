@@ -113,12 +113,6 @@ const companySlice = createSlice({
         }
     )
     .addCase(
-        createCompany.pending, 
-        (state) => {
-            state.isLoading = true;
-        }
-    )
-    .addCase(
         createCompany.rejected,
         (state, action: PayloadAction<any>) => {
             state.isLoading = false;

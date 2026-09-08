@@ -114,12 +114,6 @@ const interlocutorSlice = createSlice({
         }
     )
     .addCase(
-        createInterlocutor.pending, 
-        (state) => {
-            state.isLoading = true;
-        }
-    )
-    .addCase(
         createInterlocutor.rejected,
         (state, action: PayloadAction<any>) => {
             state.isLoading = false;

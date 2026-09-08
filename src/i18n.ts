@@ -32,7 +32,10 @@ const resources = {
           "interviewType.CLIENT":"Client Interview",
           "interviewType.OTHER":"Other",
           "documentType.CV": "CV",
-          "documentType.MOTIVATION_LETTER": "Motivation Letter"
+          "documentType.MOTIVATION_LETTER": "Motivation Letter",
+          "RemoteCondition.Remote": "Remote",
+          "RemoteCondition.Hybrid": "Hybrid",
+          "RemoteCondition.Office": "Office"
         }
       },
       fr: {
@@ -64,7 +67,10 @@ const resources = {
           "interviewType.CLIENT":"Entretien Client Final",
           "interviewType.OTHER":"Autre",
           "documentType.CV": "CV",
-          "documentType.MOTIVATION_LETTER": "Lettre de motivation"
+          "documentType.MOTIVATION_LETTER": "Lettre de motivation",
+          "RemoteCondition.Remote": "Télétravail total",
+          "RemoteCondition.Hybrid": "Hybride",
+          "RemoteCondition.Office": "Présentiel"
         }
       }
 };

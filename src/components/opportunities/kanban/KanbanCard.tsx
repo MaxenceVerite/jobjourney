@@ -23,6 +23,7 @@ import Opportunity, { EOpportunityState, EArchiveReason, RemoteCondition } from 
 import { RootState } from "../../../store/store";
 import { updateOpportunity } from "../../../store/slices/opportunitySlice";
 import { useModal } from "../../../contexts/ModalContext";
+import { useTranslation } from "react-i18next";
 import ArchiveOpportunityModal from "../ArchiveOpportunityModal";
 
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -63,6 +64,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ opportunity, index }) =>
   const navigate = useNavigate();
   const dispatch = useDispatch<any>();
   const { openModal, closeModal } = useModal();
+  const { t } = useTranslation();
 
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -239,7 +241,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ opportunity, index }) =>
             <Box display="flex" flexWrap="wrap" gap={0.8} mb={1.5}>
               {opportunity.remoteCondition && (
                 <Chip
-                  label={opportunity.remoteCondition}
+                  label={t(`RemoteCondition.${opportunity.remoteCondition}`)}
                   size="small"
                   variant="outlined"
                   sx={{
