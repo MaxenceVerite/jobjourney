@@ -11,6 +11,8 @@ using MyJobBoard.Infrastructure.Data;
 using Microsoft.AspNetCore.RateLimiting;
 using MyJobBoard.Infrastructure.Services;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Database & EF Core
