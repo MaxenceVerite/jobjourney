@@ -68,8 +68,8 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ opportunity, index }) =>
 
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
 
-  const [opportunityCompany] = useSelector((state: RootState) =>
-    state.companies.companies.filter((c) => c.id === opportunity.companyId)
+  const opportunityCompany = useSelector((state: RootState) =>
+    state.companies.companies.find((c) => c.id === opportunity.companyId)
   );
 
   const companyName = opportunityCompany?.name ?? "Entreprise";

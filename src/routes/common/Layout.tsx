@@ -207,21 +207,23 @@ const Layout = () => {
         component="main" 
         sx={{ 
           flexGrow: 1, 
-          p: { xs: 2, md: 3 }, 
+          p: { xs: 1, sm: 2, md: 3 }, 
           minHeight: "100vh", 
-          width: { md: `calc(100% - ${drawerWidth}px)` } 
+          width: { xs: "100%", md: `calc(100% - ${drawerWidth}px)` },
+          overflowX: "hidden",
+          boxSizing: "border-box"
         }}
       >
         <Container maxWidth="xl" sx={{ padding: { xs: 0, sm: 2 } }}>
-          <Box marginBottom="3%" marginTop={{ xs: "5%", md: "2%" }}>
-            <Toolbar disableGutters sx={{ paddingLeft: "0px" }}>
+          <Box marginBottom={{ xs: "5%", md: "3%" }} marginTop={{ xs: "2%", md: "2%" }}>
+            <Toolbar disableGutters sx={{ paddingLeft: "0px", minHeight: {xs: "48px"} }}>
               {isMobile && (
                 <IconButton
                   color="inherit"
                   aria-label="open drawer"
                   edge="start"
                   onClick={handleDrawerToggle}
-                  sx={{ mr: 1, color: 'primary.main' }}
+                  sx={{ mr: 0.5, color: 'primary.main' }}
                 >
                   <MenuIcon />
                 </IconButton>
@@ -232,6 +234,7 @@ const Layout = () => {
                 color="primary.main"
                 flexGrow="1"
                 variant={isMobile ? "h6" : "h4"}
+                sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem', md: '2rem' } }}
                 noWrap
               >
                 {selected()?.label}
@@ -255,13 +258,14 @@ const Layout = () => {
                    display: { xs: 'none', sm: 'block' } // Hide search on very small screens for now, or adapt it
                   }}
                 />
-                <Box sx={{ display: 'flex' }}>
+                <Box sx={{ display: 'flex', gap: {xs: 0, sm: 1} }}>
                   <IconButton
                     aria-label="compte utilisateur"
                     aria-controls="menu-appbar"
                     aria-haspopup="true"
                     onClick={handleMenu}
                     color="inherit"
+                    sx={{ p: {xs: 0.5, sm: 1} }}
                   >
                     <PersonIcon />
                   </IconButton>

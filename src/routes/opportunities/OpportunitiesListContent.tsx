@@ -180,7 +180,7 @@ const OpportunitiesListContent = () => {
             value={remoteFilter}
             onChange={(e) => setRemoteFilter(e.target.value)}
             sx={{
-              minWidth: 140,
+              minWidth: { xs: "100%", sm: 140 },
               "& .MuiInputBase-root": {
                 borderRadius: 2,
                 boxShadow: "none",
@@ -188,7 +188,7 @@ const OpportunitiesListContent = () => {
               },
             }}
           >
-            <MenuItem value="ALL">Tous les modes</MenuItem>
+            <MenuItem value="ALL">TT / Présentiel</MenuItem>
             <MenuItem value={RemoteCondition.Remote}>{t(`RemoteCondition.${RemoteCondition.Remote}`)}</MenuItem>
             <MenuItem value={RemoteCondition.Hybrid}>{t(`RemoteCondition.${RemoteCondition.Hybrid}`)}</MenuItem>
             <MenuItem value={RemoteCondition.Office}>{t(`RemoteCondition.${RemoteCondition.Office}`)}</MenuItem>
@@ -206,7 +206,7 @@ const OpportunitiesListContent = () => {
         </Box>
 
         {/* Right Side: View Mode Switcher & Add Button */}
-        <Box display="flex" alignItems="center" gap={2}>
+        <Box display="flex" alignItems="center" gap={2} flexWrap="wrap" width={{xs: "100%", sm: "auto"}}>
           <ToggleButtonGroup
             value={viewMode}
             exclusive
@@ -216,6 +216,11 @@ const OpportunitiesListContent = () => {
               bgcolor: alpha(theme.palette.primary.main, 0.05),
               borderRadius: 2,
               p: 0.3,
+              display: "flex",
+              width: { xs: "100%", sm: "auto" },
+              "& .MuiToggleButtonGroup-grouped": {
+                flexGrow: 1
+              },
               "& .MuiToggleButton-root": {
                 border: "none",
                 borderRadius: 1.5,
@@ -256,6 +261,7 @@ const OpportunitiesListContent = () => {
               textTransform: "none",
               px: 2.2,
               whiteSpace: "nowrap",
+              width: {xs: "100%", sm: "auto"}
             }}
           >
             Nouvelle Opportunité

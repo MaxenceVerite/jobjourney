@@ -10,7 +10,7 @@ import {
   Typography,
   alpha,
 } from "@mui/material";
-import { DragDropContext, DropResult } from "@hello-pangea/dnd";
+import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import { useDispatch } from "react-redux";
 import Opportunity, { EOpportunityState } from "../../../models/opportunities/Opportunity";
 import { updateOpportunity } from "../../../store/slices/opportunitySlice";
@@ -208,16 +208,18 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         {/* Column Banner on Mobile with Quick Add */}
         <Box
           display="flex"
+          flexWrap="wrap"
           alignItems="center"
           justifyContent="space-between"
+          gap={2}
           mb={2}
           p={1.5}
           borderRadius={2}
           bgcolor={alpha(currentColumn.color, 0.08)}
         >
-          <Box display="flex" alignItems="center" gap={1}>
+          <Box display="flex" alignItems="center" gap={1} flexGrow={1}>
             <Box sx={{ color: currentColumn.color }}>{currentColumn.icon}</Box>
-            <Typography variant="subtitle1" fontWeight={700} color="text.primary">
+            <Typography variant="subtitle1" fontWeight={700} color="text.primary" sx={{ wordBreak: 'break-word' }}>
               {currentColumn.title} ({currentColumnOpps.length})
             </Typography>
           </Box>
@@ -232,6 +234,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8rem",
+              width: { xs: "100%", sm: "auto" }
             }}
           >
             Ajouter
@@ -266,11 +269,20 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           </Box>
         ) : (
           <DragDropContext onDragEnd={handleDragEnd}>
-            <Box>
-              {currentColumnOpps.map((opp, index) => (
-                <KanbanCard key={opp.id || index} opportunity={opp} index={index} />
-              ))}
-            </Box>
+            <Droppable droppableId={currentColumn.state}>
+              {(provided) => (
+                <Box
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  sx={{ minHeight: 100 }}
+                >
+                  {currentColumnOpps.map((opp, index) => (
+                    <KanbanCard key={opp.id || index} opportunity={opp} index={index} />
+                  ))}
+                  {provided.placeholder}
+                </Box>
+              )}
+            </Droppable>
           </DragDropContext>
         )}
       </Box>
@@ -285,9 +297,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           display: "flex",
           gap: 2,
           overflowX: "auto",
-          pb: 3,
+          pb: 1,
           pt: 0.5,
-          minHeight: "75vh",
+          height: "calc(100vh - 220px)",
           alignItems: "stretch",
           "&::-webkit-scrollbar": {
             height: "8px",

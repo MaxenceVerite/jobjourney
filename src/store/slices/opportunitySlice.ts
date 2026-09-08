@@ -329,7 +329,7 @@ const opportunitySlice = createSlice({
           };
           state.opportunities[opportunityIndex] = updatedOpportunity;
         }
-      )
+      })
       .addCase(
         createInterview.rejected,
         (state, action: PayloadAction<any>) => {

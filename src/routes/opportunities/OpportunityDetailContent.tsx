@@ -2,50 +2,45 @@ import {
   Grid,
   Typography,
   Button,
-  Paper,
-  Stepper,
-  Step,
-  StepLabel,
-  Divider,
   TextareaAutosize,
   TextField,
   Container,
   Box,
+  Chip,
+  Alert,
+  AlertTitle,
+  useTheme,
+  alpha,
+  Paper,
+  Divider,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import {
   Article as ArticleIcon,
-  AddCircleOutline as AddCircleOutlineIcon,
-  EmojiPeopleOutlined,
   Link,
 } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../store/store";
 import Opportunity, {
   EOpportunityState,
 } from "../../models/opportunities/Opportunity";
-import { useDispatch } from "react-redux";
 import {
   getOpportunity,
   updateOpportunity,
   updateOpportunityDocuments,
 } from "../../store/slices/opportunitySlice";
 import { useTranslation } from "react-i18next";
-import ApplicationContainer from "../../components/application/ApplicationContainer";
 import { fetchDocuments } from "../../store/slices/documentSlice";
 import ActionableSection from "../../components/common/ActionableSection";
-import ExpendableTextfield from "../../components/common/inputs/ExpendableTextfield";
 import DocumentCardList from "../../components/documents/DocumentCardList";
 import { useModal } from "../../contexts/ModalContext";
 import DocumentPicker from "../../components/documents/forms/DocumentPicker";
-import OpportunityInterviewCard from "../../components/opportunities/interviews/OpportunityInterviewCard";
 import OpportunityInterviewCardList from "../../components/opportunities/interviews/OpportunityInterviewCardList";
 import PhaseStepper from "../../components/common/inputs/PhaseStepper";
 import ArchiveOpportunityModal from "../../components/opportunities/ArchiveOpportunityModal";
 import ArchiveRoundedIcon from "@mui/icons-material/ArchiveRounded";
 import UnarchiveRoundedIcon from "@mui/icons-material/UnarchiveRounded";
-import { Chip, Alert, AlertTitle, useTheme, alpha } from "@mui/material";
 import {
   getOpportunityStateLabel,
   getArchiveReasonLabel,
@@ -75,32 +70,24 @@ const OpportunityDetailContent = () => {
     }
   }, [opportunity, dispatch]);
 
-
-  const activeStep = EOpportunityState.APPLIED;
-
-  const phases: EOpportunityState[] = useSelector(
-    (state: RootState) => state.opportunities.opportunityStates
-  );
   const [opportunityCompany] = useSelector((state: RootState) =>
-    state.companies.companies.filter((c) => c.id == opportunity!.companyId)
+    state.companies.companies.filter((c) => c.id == opportunity?.companyId)
   );
 
   const opportunityDocuments = useSelector((state: RootState) => {
     return state.documents.documents.filter(q => opportunity?.documents?.map(d => d.id).includes(q.id))
-  })
+  });
 
-  const companyName = opportunityCompany?.name ?? "Enseigne";
+  const companyName = opportunityCompany?.name ?? "Entreprise inconnue";
 
   const handleJoinedDocumentsChange = (selectedDocumentIds: string[]) => {
-   
-
-    dispatch(updateOpportunityDocuments({opportunityId: opportunity?.id!, documentsIds: selectedDocumentIds }));
+    dispatch(updateOpportunityDocuments({ opportunityId: opportunity?.id!, documentsIds: selectedDocumentIds }));
     closeModal();
   };
 
   const handleJoinDocument = () => {
     openModal(
-      "Selectionner un document",
+      "Sélectionner un document",
       <DocumentPicker
         preselectedDocumentIds={opportunity?.documents?.map(c => c.id)}
         multipleSelection
@@ -110,8 +97,15 @@ const OpportunityDetailContent = () => {
     );
   };
 
+  const [note, setNote] = useState("");
+
+  useEffect(() => {
+    if (opportunity?.freeNotes) {
+      setNote(opportunity.freeNotes);
+    }
+  }, [opportunity?.freeNotes]);
+
   const saveOpportunityNotes = () => {
- 
     if (opportunity?.freeNotes !== note) {
       dispatch(
         updateOpportunity({
@@ -122,7 +116,6 @@ const OpportunityDetailContent = () => {
   };
 
   const theme = useTheme();
-  const [note, setNote] = useState(opportunity?.freeNotes || "");
 
   if (!opportunity || !id) {
     return null;
@@ -147,10 +140,10 @@ const OpportunityDetailContent = () => {
   };
 
   return (
-    <Grid container xs={12}>
-      {/* Archive Notice Banner if Archived */}
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      {/* Archive Notice Banner */}
       {(isArchived || opportunity.archiveReason) && (
-        <Grid item xs={12} mb={3}>
+        <Box mb={4}>
           <Alert
             severity={opportunity.state === EOpportunityState.VALIDATED ? "success" : "info"}
             icon={isArchived ? <ArchiveRoundedIcon /> : undefined}
@@ -167,7 +160,7 @@ const OpportunityDetailContent = () => {
             sx={{
               borderRadius: 2.5,
               alignItems: "center",
-              boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+              boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
             }}
           >
             <AlertTitle sx={{ fontWeight: 700, mb: 0.3 }}>
@@ -181,132 +174,183 @@ const OpportunityDetailContent = () => {
               </Typography>
             )}
           </Alert>
-        </Grid>
+        </Box>
       )}
 
-      <Grid container xs={12} mb={4} alignItems="center" justifyContent="space-between">
-        <Grid item xs={12} sm={7}>
-          <Typography
-            noWrap
-            fontWeight={600}
-            variant="h5"
-            color="secondary.main"
-            sx={{
-              "&:hover": {
-                textDecoration: "underline",
-                cursor: "pointer",
-              },
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              opportunity.companyId
-                ? navigate(`/sheets/companies/${opportunity.companyId}`)
-                : undefined;
-            }}
-          >
-            {companyName}
-          </Typography>
+      {/* Header Section */}
+      <Box mb={{xs: 3, md: 5}}>
+        <Grid container alignItems="flex-start" justifyContent="space-between" spacing={2}>
+          <Grid item xs={12} md={8}>
+            <Typography
+              noWrap
+              fontWeight={600}
+              variant="h6"
+              color="text.secondary"
+              sx={{
+                fontSize: "1rem",
+                "&:hover": {
+                  color: "primary.main",
+                  cursor: "pointer",
+                },
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (opportunity.companyId) {
+                  navigate(`/sheets/companies/${opportunity.companyId}`);
+                }
+              }}
+            >
+              {companyName}
+            </Typography>
 
-          <Typography
-            noWrap
-            fontWeight={700}
-            variant="h4"
-            color="primary.main"
-            sx={{ mt: 0.5 }}
-          >
-            {opportunity.roleTitle}
-          </Typography>
+            <Typography
+              fontWeight={800}
+              variant="h3"
+              color="primary.main"
+              sx={{ mt: 0.5, letterSpacing: "-0.5px", fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' } }}
+            >
+              {opportunity.roleTitle}
+            </Typography>
+
+            <Box display="flex" gap={1} mt={2} flexWrap="wrap">
+              <Button
+                size="small"
+                color="primary"
+                variant="outlined"
+                startIcon={<Link />}
+                sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
+              >
+                Lien de l'offre
+              </Button>
+              {opportunity.remoteCondition && (
+                <Chip
+                  label={t(`RemoteCondition.${opportunity.remoteCondition}`)}
+                  color="secondary"
+                  variant="outlined"
+                  sx={{ fontWeight: 600, borderRadius: 1.5 }}
+                />
+              )}
+            </Box>
+          </Grid>
+
+          <Grid item xs={12} md={4} display="flex" flexDirection={{xs: "column", sm: "row"}} justifyContent={{ xs: "stretch", md: "flex-end" }} gap={1.5}>
+            <Button
+              variant="contained"
+              color={isArchived ? "primary" : "inherit"}
+              disableElevation
+              fullWidth
+              startIcon={isArchived ? <UnarchiveRoundedIcon /> : <ArchiveRoundedIcon />}
+              onClick={handleOpenArchiveModal}
+              sx={{
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: 600,
+                bgcolor: isArchived ? "primary.main" : "background.paper",
+                color: isArchived ? "white" : "text.primary",
+                boxShadow: isArchived ? "0 4px 12px rgba(27,44,191,0.2)" : "0 2px 8px rgba(0,0,0,0.08)",
+                "&:hover": { bgcolor: isArchived ? "primary.dark" : "grey.100" }
+              }}
+            >
+              {isArchived ? "Gérer l'archivage" : "Archiver"}
+            </Button>
+
+            <Button
+              color="info"
+              variant="text"
+              fullWidth
+              startIcon={<ArticleIcon />}
+              sx={{ textTransform: "none", fontWeight: 600, bgcolor: {xs: alpha(theme.palette.info.main, 0.1), sm: "transparent"} }}
+            >
+              Résumé
+            </Button>
+          </Grid>
         </Grid>
-
-        <Grid item xs={12} sm={5} display="flex" justifyContent={{ xs: "flex-start", sm: "flex-end" }} gap={1.5} mt={{ xs: 2, sm: 0 }}>
-          <Button
-            variant="outlined"
-            color={isArchived ? "primary" : "inherit"}
-            startIcon={isArchived ? <UnarchiveRoundedIcon /> : <ArchiveRoundedIcon />}
-            onClick={handleOpenArchiveModal}
-            sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
-          >
-            {isArchived ? "Gérer l'archivage" : "Archiver l'offre"}
-          </Button>
-
-          <Button color="info" variant="text" startIcon={<ArticleIcon />} sx={{ textTransform: "none", fontWeight: 600 }}>
-            Voir le résumé
-          </Button>
-        </Grid>
-      </Grid>
-
-      <Grid container xs={12} mb={4}>
-        <Grid item xs={6}>
-          <Button
-            size="small"
-            color="primary"
-            variant="text"
-            startIcon={<Link />}
-          >
-            Lien vers l'offre
-          </Button>
-        </Grid>
-      </Grid>
-
-      <Box width="100%" mb={5}>
-      <PhaseStepper currentPhase={opportunity.state} />
       </Box>
-      <ActionableSection  sectionTitle="Notes" isExpanded>
-        <TextareaAutosize
-          minRows={6}
-          style={{
-            width: "100%",
-            resize: "vertical",
-            padding: 10,
-            fontSize: "1rem",
-            borderColor: "0",
-            border: "0",
-            boxShadow: "5px 10px 15px rgba(0,0,0,0.07)",
-            outline: "none",
-            marginTop: "2%",
-            marginBottom: "2%"
-          }}
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          onBlur={saveOpportunityNotes}
-        />
-      </ActionableSection>
 
-      <DocumentCardList
-        customAddDocument={handleJoinDocument}
-        title="Documents envoyés"
-        documents={opportunityDocuments}
-        isExpanded
-      />
+      {/* Stepper Section */}
+      <Paper elevation={0} sx={{ p: {xs: 1.5, sm: 3}, mb: {xs: 3, md: 4}, borderRadius: 3, border: "1px solid", borderColor: "divider", bgcolor: "background.paper", overflowX: "auto" }}>
+        <PhaseStepper currentPhase={opportunity.state} />
+      </Paper>
 
-      <OpportunityInterviewCardList
-        opportunityId={opportunity.id!}
-        interviews={opportunity.interviews}
-        isExpanded
-      />
+      {/* Main Content Grid */}
+      <Grid container spacing={4}>
+        {/* Left Column (Notes, Offres) */}
+        <Grid item xs={12} md={7}>
+          <Box mb={4}>
+            <ActionableSection sectionTitle="Notes" isExpanded>
+              <TextareaAutosize
+                minRows={8}
+                placeholder="Écrivez vos notes, impressions, détails de l'offre ici..."
+                style={{
+                  width: "100%",
+                  resize: "vertical",
+                  padding: "16px",
+                  fontSize: "0.95rem",
+                  fontFamily: "inherit",
+                  borderRadius: "12px",
+                  border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
+                  backgroundColor: alpha(theme.palette.background.default, 0.5),
+                  color: theme.palette.text.primary,
+                  outline: "none",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = theme.palette.primary.main;
+                  e.target.style.boxShadow = `0 0 0 3px ${alpha(theme.palette.primary.main, 0.1)}`;
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = alpha(theme.palette.divider, 0.8);
+                  e.target.style.boxShadow = "none";
+                  saveOpportunityNotes();
+                }}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
+            </ActionableSection>
+          </Box>
 
-      <ActionableSection sectionTitle="Offres" isExpanded>
-        <TextareaAutosize
-          minRows={6}
-          style={{
-            width: "100%",
-            resize: "vertical",
-            padding: 10,
-            fontSize: "1rem",
-            borderColor: "0",
-            border: "0",
-            boxShadow: "5px 10px 15px rgba(0,0,0,0.07)",
-            outline: "none",
-          }}
-        />
-      </ActionableSection>
+          <Box>
+            <ActionableSection sectionTitle="Offres" isExpanded>
+              <TextareaAutosize
+                minRows={6}
+                placeholder="Détails de l'offre reçue (salaire, avantages...)"
+                style={{
+                  width: "100%",
+                  resize: "vertical",
+                  padding: "16px",
+                  fontSize: "0.95rem",
+                  fontFamily: "inherit",
+                  borderRadius: "12px",
+                  border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
+                  backgroundColor: alpha(theme.palette.background.default, 0.5),
+                  color: theme.palette.text.primary,
+                  outline: "none",
+                }}
+              />
+            </ActionableSection>
+          </Box>
+        </Grid>
 
-      <Grid md={1}></Grid>
-      <Grid xs={12} md={4} mb="3%"></Grid>
-      <Grid xs={12}></Grid>
-      <Grid xs={12}></Grid>
-      <Grid xs={12}></Grid>
-    </Grid>
+        {/* Right Column (Interviews, Documents) */}
+        <Grid item xs={12} md={5}>
+          <Box mb={4}>
+            <OpportunityInterviewCardList
+              opportunityId={opportunity.id!}
+              interviews={opportunity.interviews}
+              isExpanded
+            />
+          </Box>
+          <Box>
+            <DocumentCardList
+              customAddDocument={handleJoinDocument}
+              title="Documents liés"
+              documents={opportunityDocuments}
+              isExpanded
+            />
+          </Box>
+        </Grid>
+      </Grid>
+    </Container>
   );
 };
 

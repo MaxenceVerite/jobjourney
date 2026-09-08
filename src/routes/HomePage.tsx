@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Grid,
@@ -11,6 +11,8 @@ import {
   IconButton,
   alpha,
   useTheme,
+  ToggleButtonGroup,
+  ToggleButton,
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -30,11 +32,15 @@ import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import NotificationsActiveRoundedIcon from "@mui/icons-material/NotificationsActiveRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
+import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 
 const HomePage = () => {
   const theme = useTheme();
   const dispatch = useDispatch<any>();
   const navigate = useNavigate();
+
+  const [timeRange, setTimeRange] = useState<"week" | "month" | "year">("month");
 
   const { opportunities, isLoading: isOppLoading } = useSelector(
     (state: RootState) => state.opportunities
@@ -88,6 +94,40 @@ const HomePage = () => {
   const handleFollowUp = (oppId: string) => {
     dispatch(updateOpportunity({ id: oppId, lastFollowUpDate: new Date() }));
   };
+
+  // --- STATISTIQUES TEMPORELLES ---
+  const getStartDate = () => {
+    const now = new Date();
+    switch (timeRange) {
+      case "week":
+        return new Date(now.setDate(now.getDate() - 7));
+      case "month":
+        return new Date(now.setMonth(now.getMonth() - 1));
+      case "year":
+        return new Date(now.setFullYear(now.getFullYear() - 1));
+      default:
+        return new Date(0);
+    }
+  };
+
+  const startDateRange = getStartDate();
+
+  const oppsInRange = opportunities.filter(
+    (o) => new Date(o.startDate) >= startDateRange
+  );
+
+  const interviewsInRange = opportunities.reduce((sum, o) => {
+    const validInterviews = (o.interviews || []).filter(
+      (i) => new Date(i.date) >= startDateRange
+    );
+    return sum + validInterviews.length;
+  }, 0);
+
+  const offersInRange = opportunities.filter(
+    (o) => (o.state === EOpportunityState.VALIDATED || o.state === EOpportunityState.NEGOCIATION_ON_OFFERS) 
+    && new Date(o.lastUpdateDate || o.startDate) >= startDateRange
+  ).length;
+
 
   const isLoading = (isOppLoading && opportunities.length === 0) || (isDocLoading && documents.length === 0);
 
@@ -162,8 +202,8 @@ const HomePage = () => {
           boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
         }}
       >
-        <Box>
-          <Typography variant="h4" sx={{ fontSize: { xs: '1.75rem', md: '2.125rem' } }} fontWeight={600} gutterBottom>
+        <Box sx={{ width: {xs: "100%", sm: "auto"}, wordBreak: "break-word" }}>
+          <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.125rem' } }} fontWeight={600} gutterBottom>
             Bienvenue sur JobJourney 👋
           </Typography>
           <Typography variant="body1" sx={{ opacity: 0.9 }}>
@@ -244,13 +284,76 @@ const HomePage = () => {
         ))}
       </Grid>
 
+      {/* Temporal Stats Section */}
+      <Card sx={{ p: {xs: 2, md: 3}, borderRadius: 2.5, boxShadow: "0 4px 20px rgba(0,0,0,0.05)", mb: 4 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2} mb={3}>
+          <Box display="flex" alignItems="center" gap={1.5}>
+            <TrendingUpRoundedIcon color="primary" />
+            <Typography variant="h6" fontWeight={600} color="primary">
+              Résumé de votre activité
+            </Typography>
+          </Box>
+          <ToggleButtonGroup
+            value={timeRange}
+            exclusive
+            onChange={(e, val) => { if (val) setTimeRange(val) }}
+            size="small"
+            sx={{ 
+              bgcolor: "background.paper",
+              display: "flex",
+              flexWrap: "wrap",
+              "& .MuiToggleButtonGroup-grouped": {
+                flexGrow: 1
+              }
+            }}
+          >
+            <ToggleButton value="week" sx={{ px: {xs: 1, sm: 2}, textTransform: 'none', fontWeight: 600 }}>Semaine</ToggleButton>
+            <ToggleButton value="month" sx={{ px: {xs: 1, sm: 2}, textTransform: 'none', fontWeight: 600 }}>Mois</ToggleButton>
+            <ToggleButton value="year" sx={{ px: {xs: 1, sm: 2}, textTransform: 'none', fontWeight: 600 }}>Année</ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={4}>
+            <Box p={2} borderRadius={2} bgcolor={alpha(theme.palette.primary.main, 0.04)} border={`1px solid ${alpha(theme.palette.primary.main, 0.1)}`}>
+              <Typography variant="body2" color="text.secondary" fontWeight={600} mb={1}>
+                Nouvelles candidatures
+              </Typography>
+              <Typography variant="h4" fontWeight={700} color="primary.main">
+                {oppsInRange.length}
+              </Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Box p={2} borderRadius={2} bgcolor={alpha(theme.palette.secondary.main, 0.04)} border={`1px solid ${alpha(theme.palette.secondary.main, 0.1)}`}>
+              <Typography variant="body2" color="text.secondary" fontWeight={600} mb={1}>
+                Entretiens décrochés
+              </Typography>
+              <Typography variant="h4" fontWeight={700} color="secondary.main">
+                {interviewsInRange}
+              </Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Box p={2} borderRadius={2} bgcolor={alpha(theme.palette.success.main, 0.04)} border={`1px solid ${alpha(theme.palette.success.main, 0.1)}`}>
+              <Typography variant="body2" color="text.secondary" fontWeight={600} mb={1}>
+                Offres d'embauche
+              </Typography>
+              <Typography variant="h4" fontWeight={700} color="success.main">
+                {offersInRange}
+              </Typography>
+            </Box>
+          </Grid>
+        </Grid>
+      </Card>
+
       {/* Main Content Grid */}
       <Grid container spacing={3}>
         {/* Recent Applications */}
         <Grid item xs={12} md={8}>
-          <Card sx={{ p: 3, borderRadius: 2.5, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-              <Typography variant="h6" fontWeight={600} color="primary">
+          <Card sx={{ p: {xs: 2, sm: 3}, borderRadius: 2.5, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
+            <Box display="flex" flexDirection={{xs: "column", sm: "row"}} justifyContent="space-between" alignItems={{xs: "flex-start", sm: "center"}} gap={2} mb={3}>
+              <Typography variant="h6" fontWeight={600} color="primary" sx={{ fontSize: {xs: "1.1rem", sm: "1.25rem"} }}>
                 Dernières Opportunités
               </Typography>
               <Button
@@ -258,7 +361,7 @@ const HomePage = () => {
                 onClick={() => navigate("/opportunities")}
                 size="small"
                 color="secondary"
-                sx={{ textTransform: "none", fontWeight: 600 }}
+                sx={{ textTransform: "none", fontWeight: 600, alignSelf: {xs: "flex-start", sm: "auto"} }}
               >
                 Voir tout ({opportunities.length})
               </Button>
@@ -302,12 +405,12 @@ const HomePage = () => {
                     },
                   }}
                 >
-                  <Box display="flex" alignItems="center" gap={2}>
+                  <Box display="flex" alignItems="center" gap={2} sx={{ minWidth: 0, mr: 1 }}>
                     <Avatar sx={{ bgcolor: "primary.light", color: "primary.dark", fontWeight: 600 }}>
                       {opp.roleTitle.charAt(0).toUpperCase()}
                     </Avatar>
-                    <Box>
-                      <Typography variant="subtitle1" fontWeight={600} color="text.primary">
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography variant="subtitle1" fontWeight={600} color="text.primary" noWrap>
                         {opp.roleTitle}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
@@ -316,7 +419,7 @@ const HomePage = () => {
                     </Box>
                   </Box>
 
-                  <Box display="flex" alignItems="center" gap={2}>
+                  <Box display="flex" alignItems="center" gap={1} flexShrink={0}>
                     <Chip
                       label={opp.state}
                       color={getStatusColor(opp.state) as any}

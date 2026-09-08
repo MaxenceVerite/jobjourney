@@ -4,13 +4,12 @@ import { useTranslation } from "react-i18next";
 import {
   Container,
   Box,
-  FormControl,
   TextField,
-  InputLabel,
-  Select,
   Button,
   MenuItem,
   TextareaAutosize,
+  Typography,
+  Grid,
 } from "@mui/material";
 import {
   Interview,
@@ -57,29 +56,25 @@ const CreateOrEditInterviewForm = ({
     string[]
   >(interview?.interviewers.map(c=> c.id) ?? []);
 
- 
-  const  handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     let interviewResultAction;
 
-    if (!interview)
-    interviewResultAction = await dispatch(
+    if (!interview) {
+      interviewResultAction = await dispatch(
          createInterview({ opportunityId: opportunityId, interview: _interview })
       );
-    else
-    interviewResultAction = await  dispatch(
+    } else {
+      interviewResultAction = await dispatch(
         updateInterview({ opportunityId: opportunityId, interview: _interview })
       );
+    }
 
-      console.log(interviewResultAction)
     if (
       createInterview.fulfilled.match(interviewResultAction) ||
       updateInterview.fulfilled.match(interviewResultAction)
     ) {
-    
-      console.log(interviewResultAction.payload);
-      
       await dispatch(
         updateOpportunityInterviewInterlocutors({
           opportunityId: opportunityId,
@@ -102,115 +97,145 @@ const CreateOrEditInterviewForm = ({
   };
 
   return (
-    <Container maxWidth="sm">
+    <Container maxWidth="sm" sx={{ py: 2 }}>
       <Box
-        padding="3%"
         component="form"
         onSubmit={handleSubmit}
         noValidate
-        sx={{ mt: 1 }}
       >
-        <TextField
-          select
-          margin="normal"
-          id="type"
-          name="type"
-          value={_interview.type}
-          label="Type d'entretien"
-          variant="standard"
-          fullWidth
-          onChange={(e) => {
-            handleInputChange(e);
-            setShowCustomType(e.target.value === InterviewType.Other);
-          }}
-        >
-          {Object.values(InterviewType).map((type) => (
-            <MenuItem key={type} value={type}>
-              {t(`interviewType.${type}`)}
-            </MenuItem>
-          ))}
-        </TextField>
-        {showCustomType && (
-          <TextField
-            margin="normal"
-            id="customType"
-            name="customType"
-            value={_interview.customType}
-            label="Type d'entretien personnalisé"
-            variant="standard"
-            fullWidth
-            onChange={handleInputChange}
-          />
-        )}
-        <TextField
-          variant="standard"
-          margin="normal"
-          fullWidth
-          select
-          id="meetingCondition"
-          name="meetingCondition"
-          value={_interview.meetingCondition}
-          label="Methode d'entretien"
-          onChange={handleInputChange}
-        >
-          {Object.values(MeetingConditions).map((condition) => (
-            <MenuItem key={condition} value={condition}>
-              {t(`meetingConditions.${condition}`)}
-            </MenuItem>
-          ))}
-        </TextField>
+        <Typography variant="body2" color="text.secondary" mb={3}>
+          Complétez les informations pour {interview ? "modifier cet" : "planifier un nouvel"} entretien.
+        </Typography>
 
-        <TextField
-          variant="standard"
-          id="dueDate"
-          label="Date de l'entretien"
-          type="date"
-          name="dueDate"
-          margin="normal"
-          value={_interview.dueDate}
-          onChange={handleInputChange}
-          InputLabelProps={{
-            shrink: true,
-          }}
-          fullWidth
-        />
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={showCustomType ? 6 : 12}>
+            <TextField
+              select
+              id="type"
+              name="type"
+              value={_interview.type}
+              label="Type d'entretien"
+              variant="outlined"
+              fullWidth
+              onChange={(e) => {
+                handleInputChange(e);
+                setShowCustomType(e.target.value === InterviewType.Other);
+              }}
+            >
+              {Object.values(InterviewType).map((type) => (
+                <MenuItem key={type} value={type}>
+                  {t(`interviewType.${type}`)}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          
+          {showCustomType && (
+            <Grid item xs={12} sm={6}>
+              <TextField
+                id="customType"
+                name="customType"
+                value={_interview.customType || ""}
+                label="Précisez le type"
+                variant="outlined"
+                fullWidth
+                onChange={handleInputChange}
+              />
+            </Grid>
+          )}
 
-        <InterlocutorsPicker
-          preselectedInterlocutors={associatedInterlocutors}
-          onInterlocutorsSelectionChange={handleInterlocutorSelectionChange}
-          canCreate
-        />
+          <Grid item xs={12} sm={6}>
+            <TextField
+              variant="outlined"
+              fullWidth
+              select
+              id="meetingCondition"
+              name="meetingCondition"
+              value={_interview.meetingCondition}
+              label="Méthode d'entretien"
+              onChange={handleInputChange}
+            >
+              {Object.values(MeetingConditions).map((condition) => (
+                <MenuItem key={condition} value={condition}>
+                  {t(`meetingConditions.${condition}`)}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
 
-        <TextareaAutosize
-          minRows={3}
-          placeholder="Notes ..."
-          name="freeNotes"
-          id="freeNotes"
-          style={{
-            width: "100%",
-            resize: "vertical",
-            padding: 10,
-            fontSize: "1rem",
-            borderColor: "0",
-            border: "0",
-            boxShadow: "5px 10px 15px rgba(0,0,0,0.07)",
-            outline: "none",
-            marginTop: "2%",
-            marginBottom: "2%",
-          }}
-          value={_interview.freeNotes}
-          onChange={handleInputChange}
-        />
+          <Grid item xs={12} sm={6}>
+            <TextField
+              variant="outlined"
+              id="dueDate"
+              label="Date et Heure"
+              type="datetime-local"
+              name="dueDate"
+              value={
+                _interview.dueDate
+                  ? new Date(_interview.dueDate).toISOString().slice(0, 16)
+                  : ""
+              }
+              onChange={(e) => {
+                setInterview((prev) => ({
+                  ...prev,
+                  dueDate: new Date(e.target.value),
+                }));
+              }}
+              InputLabelProps={{
+                shrink: true,
+              }}
+              fullWidth
+            />
+          </Grid>
 
-        <Box>
+          <Grid item xs={12}>
+            <InterlocutorsPicker
+              preselectedInterlocutors={associatedInterlocutors}
+              onInterlocutorsSelectionChange={handleInterlocutorSelectionChange}
+              canCreate
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <TextField
+              multiline
+              minRows={4}
+              placeholder="Ajoutez des notes ou des consignes pour cet entretien..."
+              name="freeNotes"
+              id="freeNotes"
+              fullWidth
+              variant="outlined"
+              value={_interview.freeNotes || ""}
+              onChange={handleInputChange}
+            />
+          </Grid>
+        </Grid>
+
+        <Box display="flex" justifyContent="flex-end" gap={2} mt={4}>
+          <Button
+            variant="text"
+            color="inherit"
+            onClick={(e) => {
+              e.preventDefault();
+              onSubmit();
+            }}
+            sx={{ fontWeight: 600, textTransform: "none" }}
+          >
+            Annuler
+          </Button>
           <Button
             color="primary"
             type="submit"
-            fullWidth
             variant="contained"
-            sx={{ mb: "2%" }}
+            sx={{
+              fontWeight: 600,
+              textTransform: "none",
+              px: 3,
+              borderRadius: 2,
+              boxShadow: "0 4px 12px rgba(27, 44, 191, 0.2)",
+            }}
           >
-            {interview ? "Modifier" : "Créer"}
+            {interview ? "Enregistrer" : "Planifier"}
           </Button>
         </Box>
       </Box>

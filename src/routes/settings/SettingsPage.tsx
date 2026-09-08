@@ -59,19 +59,7 @@ const SettingsPage = () => {
         Paramètres
       </Typography>
       <Paper sx={{ p: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <Typography variant="h6">Configuration de l'IA</Typography>
-        
-        <TextField
-          label="Clé API Gemini (Google)"
-          name="aiApiKey"
-          type="password"
-          fullWidth
-          value={settings?.aiApiKey || ""}
-          onChange={handleChange}
-          helperText="Si renseignée, l'application utilisera votre propre quota pour les requêtes."
-        />
 
-        <Divider sx={{ my: 2 }} />
         <Typography variant="h6">Préférences</Typography>
 
         <FormControlLabel

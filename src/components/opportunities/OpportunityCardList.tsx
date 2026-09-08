@@ -47,8 +47,8 @@ const OpportunityCardList = ({
     isExpanded={isExpanded} 
     sectionTitle={title}>
       <Grid marginY={3} paddingX={3} item xs={12}>
-        {opportunities.map((opp) => (
-          <OpportunityCard opportunity={opp} />
+        {opportunities.map((opp, index) => (
+          <OpportunityCard key={opp.id || index} opportunity={opp} />
         ))}
         {canAddOpportunity && (
           <Card
