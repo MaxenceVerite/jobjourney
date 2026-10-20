@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace MyJobBoard.Api.Controllers;
 
 [ApiController]
-[EnableRateLimiting("Auth")]
 public class AuthController : ControllerBase
 {
     private readonly UserManager<IdentityUser> _userManager;
@@ -27,6 +26,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [EnableRateLimiting("Auth")]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
     {
         var email = request.GetEffectiveEmail();
@@ -58,6 +58,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("Auth")]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {
         var email = request.GetEffectiveEmail();

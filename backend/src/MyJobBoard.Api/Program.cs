@@ -84,7 +84,22 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "https://jobjourney-phi.vercel.app")
+        policy.SetIsOriginAllowed(origin =>
+              {
+                  if (string.IsNullOrWhiteSpace(origin)) return false;
+                  try
+                  {
+                      var host = new Uri(origin).Host.ToLowerInvariant();
+                      return host == "localhost"
+                          || host == "127.0.0.1"
+                          || host == "jobjourney-phi.vercel.app"
+                          || host.EndsWith(".vercel.app");
+                  }
+                  catch
+                  {
+                      return false;
+                  }
+              })
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -146,6 +161,9 @@ builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
+// CORS Middleware must be called before RateLimiting, Authentication and Authorization
+app.UseCors("AllowFrontend");
+
 // Security Headers Middleware
 app.Use(async (context, next) =>
 {
@@ -168,14 +186,13 @@ using (var scope = app.Services.CreateScope())
 // Migrations are handled via EF Core CLI for Postgres.
 
 // HTTP Request Pipeline
-app.UseRateLimiter();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowFrontend");
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
