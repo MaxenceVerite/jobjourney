@@ -37,7 +37,7 @@ const logout = async () => {
 };
 
 const register = async (registerData: RegisterData): Promise<void> => {
-    return await registerApi(registerData.mail, registerData.password);
+    return await registerApi(registerData.mail, registerData.password, registerData.tel);
 }
 
 const checkSession = async (): Promise<void> => {

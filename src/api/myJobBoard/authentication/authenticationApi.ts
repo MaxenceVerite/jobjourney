@@ -3,16 +3,25 @@ import Token from "../../../models/authentication/Token";
 import myJobBoardClient from "../apiClient";
 import { setAccessToken, setRefreshToken } from "../tokenManager";
 
-const register = async (mail: string, password: string): Promise<void> => {
+const register = async (mail: string, password: string, tel?: string): Promise<any> => {
   try {
     const response = await myJobBoardClient.post("/register", {
       email: mail,
       password: password,
+      tel: tel,
     });
 
-    return response.data
-  } catch (error) {
-    console.log("Erreur lors de la création de compte:", error);
+    return response.data;
+  } catch (error: any) {
+    console.error("Erreur lors de la création de compte:", error);
+    const message =
+      error.response?.data?.error ||
+      (Array.isArray(error.response?.data?.errors)
+        ? error.response.data.errors.join(", ")
+        : error.response?.data?.errors) ||
+      error.message ||
+      "Erreur lors de la création de compte";
+    throw new Error(message);
   }
 };
 
@@ -37,9 +46,10 @@ const login = async (mail: string, password: string): Promise<void> => {
 
     return response.data;
     
-  } catch (error) {
-    console.log("Erreur lors de la connexion:", error);
-    throw error;
+  } catch (error: any) {
+    console.error("Erreur lors de la connexion:", error);
+    const message = error.response?.data?.error || error.message || "Identifiants invalides.";
+    throw new Error(message);
   }
 };
 

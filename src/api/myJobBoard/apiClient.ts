@@ -7,6 +7,7 @@ import {getAccessToken, getRefreshToken} from "./tokenManager";
 const apiClient = axios.create({
   baseURL: config.apiUrl,
   withCredentials: true,
+  timeout: 15000,
 });
 
 // Interceptor de requête pour ajouter le token à chaque requête
