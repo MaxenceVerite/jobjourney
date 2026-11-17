@@ -76,7 +76,9 @@ builder.Services.AddHttpClient<GeminiAiService>();
 builder.Services.AddHttpClient<GroqAiService>();
 builder.Services.AddScoped<ResilientAiService>();
 builder.Services.AddScoped<IAiService, CachedAiService>();
+builder.Services.AddScoped<IJobMatchingService, JobMatchingService>();
 builder.Services.AddHttpClient<IFranceTravailService, FranceTravailService>();
+builder.Services.AddHttpClient<IJobScraperService, JobScraperService>();
 builder.Services.AddHostedService<NotificationWorker>();
 
 // 5. CORS Policy
@@ -181,6 +183,35 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await dbContext.Database.EnsureCreatedAsync();
+
+    // Ensure new Opportunity columns exist in Postgres
+    try
+    {
+        await dbContext.Database.ExecuteSqlRawAsync(@"
+            ALTER TABLE ""Opportunities"" ADD COLUMN IF NOT EXISTS ""ContractType"" text NULL;
+            ALTER TABLE ""Opportunities"" ADD COLUMN IF NOT EXISTS ""SourceJobBoard"" text NULL;
+            ALTER TABLE ""Opportunities"" ADD COLUMN IF NOT EXISTS ""ExternalReference"" text NULL;
+            ALTER TABLE ""Opportunities"" ADD COLUMN IF NOT EXISTS ""CompanyLogoUrl"" text NULL;
+            ALTER TABLE ""Opportunities"" ADD COLUMN IF NOT EXISTS ""ExperienceLevel"" text NULL;
+            ALTER TABLE ""Opportunities"" ADD COLUMN IF NOT EXISTS ""PublishedAt"" timestamp with time zone NULL;
+            ALTER TABLE ""Opportunities"" ADD COLUMN IF NOT EXISTS ""Skills"" text[] NULL;
+
+            ALTER TABLE ""UserProfiles"" ADD COLUMN IF NOT EXISTS ""TargetHorizonRole"" text NULL;
+            ALTER TABLE ""UserProfiles"" ADD COLUMN IF NOT EXISTS ""CompactCareerManifesto"" text NULL;
+            ALTER TABLE ""UserProfiles"" ADD COLUMN IF NOT EXISTS ""WeightSalary"" integer NOT NULL DEFAULT 3;
+            ALTER TABLE ""UserProfiles"" ADD COLUMN IF NOT EXISTS ""WeightTechChallenge"" integer NOT NULL DEFAULT 4;
+            ALTER TABLE ""UserProfiles"" ADD COLUMN IF NOT EXISTS ""WeightWorkLifeBalance"" integer NOT NULL DEFAULT 4;
+            ALTER TABLE ""UserProfiles"" ADD COLUMN IF NOT EXISTS ""WeightCareerGrowth"" integer NOT NULL DEFAULT 3;
+            ALTER TABLE ""UserProfiles"" ADD COLUMN IF NOT EXISTS ""EnableTradeOffAlerts"" boolean NOT NULL DEFAULT true;
+            ALTER TABLE ""UserProfiles"" ADD COLUMN IF NOT EXISTS ""CoreSkills"" text[] NULL;
+            ALTER TABLE ""UserProfiles"" ADD COLUMN IF NOT EXISTS ""DesiredSkills"" text[] NULL;
+            ALTER TABLE ""UserProfiles"" ADD COLUMN IF NOT EXISTS ""VetoKeywords"" text[] NULL;
+        ");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"DB Schema migration note: {ex.Message}");
+    }
 }
 
 // Migrations are handled via EF Core CLI for Postgres.

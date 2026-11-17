@@ -28,7 +28,14 @@ export default interface Opportunity extends IAnnotable{
     confidenceLevel?: number,
     archiveReason?: string,
     archiveFeedback?: string,
-    archivedDate?: Date
+    archivedDate?: Date,
+    contractType?: string,
+    sourceJobBoard?: string,
+    externalReference?: string,
+    companyLogoUrl?: string,
+    experienceLevel?: string,
+    publishedAt?: Date | string,
+    skills?: string[]
 }
 
 export enum EArchiveReason {

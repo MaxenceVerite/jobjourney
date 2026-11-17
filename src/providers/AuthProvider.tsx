@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { checkSession as checkSessionAction } from '../store/slices/authSlice';
+import { checkSession as checkSessionAction, setConnected } from '../store/slices/authSlice';
 import { Box, CircularProgress, Typography } from '@mui/material';
-import { getAccessToken, getRefreshToken } from '../api/myJobBoard/tokenManager';
+import { getAccessToken, getRefreshToken, clearTokens, isTokenExpired } from '../api/myJobBoard/tokenManager';
 
 export const AuthContext = React.createContext({});
 
@@ -11,26 +11,48 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useDispatch<any>();
   
   useEffect(() => {
-    const checkSession = async () => {
+    const initAuth = async () => {
       const accessToken = getAccessToken();
       const refreshToken = getRefreshToken();
 
-      // If user has no saved tokens, they are not logged in: skip network request immediately!
+      // Cas 1: Aucun token -> Déconnecté immédiatement (0ms)
       if (!accessToken && !refreshToken) {
         setLoading(false);
         return;
       }
 
-      try {
-        await dispatch(checkSessionAction());
-      } catch (error) {
-        console.error("Session check error", error);
-      } finally {
+      // Cas 2: Token d'accès existant et valide localement
+      // L'utilisateur est connecté immédiatement sans attendre le réveil de Render
+      if (accessToken && !isTokenExpired(accessToken)) {
+        dispatch(setConnected(true));
         setLoading(false);
+        // Vérification silencieuse en arrière-plan sans bloquer l'interface
+        dispatch(checkSessionAction()).catch(() => {});
+        return;
       }
+
+      // Cas 3: Token expiré, mais un refresh token existe
+      // On attend au maximum 4 secondes pour rafraîchir la session
+      if (refreshToken) {
+        try {
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Timeout")), 4000)
+          );
+          await Promise.race([dispatch(checkSessionAction()), timeoutPromise]);
+        } catch {
+          clearTokens();
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+
+      // Cas 4: Token expiré et aucun refresh token -> Nettoyage immédiat (0ms)
+      clearTokens();
+      setLoading(false);
     };
-   
-    checkSession();
+
+    initAuth();
   }, [dispatch]);
 
   if (isLoading) {
@@ -48,7 +70,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       >
         <CircularProgress />
         <Typography variant="body2" color="text.secondary">
-          Vérification de la session...
+          Chargement de Job Journey...
         </Typography>
       </Box>
     );

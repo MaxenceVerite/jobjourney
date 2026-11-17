@@ -67,6 +67,11 @@ public class CachedAiService : IAiService
         return _innerAiService.GenerateOpportunitySummaryAsync(jsonContext, userId);
     }
 
+    public Task<string> EvaluateBatchTradeOffsAsync(string batchPromptJson, string userId)
+    {
+        return _innerAiService.EvaluateBatchTradeOffsAsync(batchPromptJson, userId);
+    }
+
     private static string NormalizeCompanyName(string companyName)
     {
         if (string.IsNullOrWhiteSpace(companyName)) return string.Empty;

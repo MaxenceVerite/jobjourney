@@ -63,6 +63,17 @@ public class ProfileController : ControllerBase
         profile.Latitude = updatedProfile.Latitude;
         profile.Longitude = updatedProfile.Longitude;
 
+        profile.TargetHorizonRole = updatedProfile.TargetHorizonRole;
+        profile.CompactCareerManifesto = updatedProfile.CompactCareerManifesto;
+        profile.WeightSalary = updatedProfile.WeightSalary;
+        profile.WeightTechChallenge = updatedProfile.WeightTechChallenge;
+        profile.WeightWorkLifeBalance = updatedProfile.WeightWorkLifeBalance;
+        profile.WeightCareerGrowth = updatedProfile.WeightCareerGrowth;
+        profile.EnableTradeOffAlerts = updatedProfile.EnableTradeOffAlerts;
+        profile.CoreSkills = updatedProfile.CoreSkills ?? new();
+        profile.DesiredSkills = updatedProfile.DesiredSkills ?? new();
+        profile.VetoKeywords = updatedProfile.VetoKeywords ?? new();
+
         await _context.SaveChangesAsync();
 
         return Ok(profile);

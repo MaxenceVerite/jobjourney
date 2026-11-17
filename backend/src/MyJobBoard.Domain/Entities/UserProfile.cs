@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace MyJobBoard.Domain.Entities;
 
@@ -25,4 +26,22 @@ public class UserProfile
     public string? CityCode { get; set; } // Code INSEE
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
+
+    // Ambition & Career DNA
+    public string? TargetHorizonRole { get; set; }
+    public string? CompactCareerManifesto { get; set; }
+
+    // Value Prioritization Sliders (1 to 5)
+    public int WeightSalary { get; set; } = 3;
+    public int WeightTechChallenge { get; set; } = 4;
+    public int WeightWorkLifeBalance { get; set; } = 4;
+    public int WeightCareerGrowth { get; set; } = 3;
+
+    // Compensatory Serendipity Mode
+    public bool EnableTradeOffAlerts { get; set; } = true;
+
+    // Skills & Vetos
+    public List<string> CoreSkills { get; set; } = new();
+    public List<string> DesiredSkills { get; set; } = new();
+    public List<string> VetoKeywords { get; set; } = new();
 }

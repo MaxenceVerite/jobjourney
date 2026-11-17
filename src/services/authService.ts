@@ -32,8 +32,10 @@ const login = async (data: LoginData): Promise<void> => {
 
 
 
+import { clearTokens } from "../api/myJobBoard/tokenManager";
+
 const logout = async () => {
-  localStorage.removeItem('user'); 
+  clearTokens();
 };
 
 const register = async (registerData: RegisterData): Promise<void> => {

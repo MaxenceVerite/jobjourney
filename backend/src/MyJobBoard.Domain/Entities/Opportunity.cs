@@ -31,6 +31,15 @@ public class Opportunity
     public double? SalaryRangeMax { get; set; }
     public Periodicity? SalaryRangePeriodicity { get; set; }
 
+    // Rich Job Board attributes
+    public string? ContractType { get; set; }
+    public string? SourceJobBoard { get; set; }
+    public string? ExternalReference { get; set; }
+    public string? CompanyLogoUrl { get; set; }
+    public string? ExperienceLevel { get; set; }
+    public DateTime? PublishedAt { get; set; }
+    public List<string> Skills { get; set; } = new List<string>();
+
     // Navigation properties
     public Application? RelatedApplication { get; set; }
     public ICollection<Interview> Interviews { get; set; } = new List<Interview>();

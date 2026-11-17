@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Job Journey - Importateur d'offres",
+  "version": "1.0.0",
+  "description": "Importez vos offres d'emploi en 1 clic depuis Welcome to the Jungle, LinkedIn, Indeed, Apec et France Travail.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.welcometothejungle.com/*",
+    "*://*.wttj.co/*",
+    "*://*.linkedin.com/*",
+    "*://*.indeed.com/*",
+    "*://*.indeed.fr/*",
+    "*://*.apec.fr/*",
+    "*://*.francetravail.fr/*",
+    "*://*.pole-emploi.fr/*",
+    "http://localhost:5200/*",
+    "http://localhost:5173/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Importer dans Job Journey"
+  }
+}

@@ -22,6 +22,7 @@ import { RootState } from "../../store/store";
 import OpportunityCardList from "../../components/opportunities/OpportunityCardList";
 import OpportunityCardSkeleton from "../../components/common/skeletons/OpportunityCardSkeleton";
 import CreateOpportunityForm from "../../components/opportunities/CreateOpportunityForm";
+import SmartImportModal from "../../components/opportunities/SmartImportModal";
 import KanbanBoard from "../../components/opportunities/kanban/KanbanBoard";
 import { useModal } from "../../contexts/ModalContext";
 import Opportunity, {
@@ -62,13 +63,14 @@ const OpportunitiesListContent = () => {
     }
   };
 
-  const handleOpenCreateModal = (initialState?: EOpportunityState) => {
+  const handleOpenCreateModal = (initialState?: EOpportunityState, initialData?: any) => {
     openModal(
-      "Créer une opportunité",
-      <CreateOpportunityForm
+      "Nouvelle opportunité",
+      <SmartImportModal
         onSubmit={closeModal}
         onClose={closeModal}
         initialState={initialState}
+        initialImportData={initialData}
       />
     );
   };
@@ -79,6 +81,7 @@ const OpportunitiesListContent = () => {
     dispatch(getOpportunities());
   }, [dispatch]);
 
+  // Handle direct navigation with create modal state
   useEffect(() => {
     if (location.state?.openCreateModal && !hasTriggeredCreateModalRef.current) {
       hasTriggeredCreateModalRef.current = true;
@@ -86,6 +89,43 @@ const OpportunitiesListContent = () => {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.state?.openCreateModal]);
+
+  // Handle 1-Click capture redirect (?import=true... or ?importData=...)
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get("import") === "true") {
+      const initialData = {
+        roleTitle: searchParams.get("title") || "",
+        companyName: searchParams.get("company") || "",
+        location: searchParams.get("location") || "",
+        sourceUrl: searchParams.get("sourceUrl") || "",
+        description: searchParams.get("text") || "",
+      };
+      handleOpenCreateModal(undefined, initialData);
+      navigate(location.pathname, { replace: true });
+    } else if (searchParams.get("importData")) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(searchParams.get("importData")!));
+        const initialData = {
+          roleTitle: parsed.title || "",
+          companyName: parsed.company || "",
+          location: parsed.location || "",
+          sourceUrl: parsed.url || "",
+          description: parsed.description || "",
+          contractType: parsed.contractType || "",
+          sourceJobBoard: parsed.sourceJobBoard || "",
+          companyLogoUrl: parsed.logoUrl || "",
+          keySkills: parsed.skills || [],
+          salaryMin: parsed.salaryMin ? String(parsed.salaryMin) : undefined,
+          salaryMax: parsed.salaryMax ? String(parsed.salaryMax) : undefined,
+        };
+        handleOpenCreateModal(undefined, initialData);
+        navigate(location.pathname, { replace: true });
+      } catch (e) {
+        console.error("Failed to parse importData parameter", e);
+      }
+    }
+  }, [location.search]);
 
   // Filtered opportunities based on search and remote filters
   const filteredOpportunities = useMemo(() => {

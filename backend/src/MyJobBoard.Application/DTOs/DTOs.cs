@@ -140,6 +140,14 @@ public class OpportunityDto
     public string? ArchiveFeedback { get; set; }
     public DateTime? ArchivedDate { get; set; }
 
+    public string? ContractType { get; set; }
+    public string? SourceJobBoard { get; set; }
+    public string? ExternalReference { get; set; }
+    public string? CompanyLogoUrl { get; set; }
+    public string? ExperienceLevel { get; set; }
+    public DateTime? PublishedAt { get; set; }
+    public List<string> Skills { get; set; } = new List<string>();
+
     public SalaryRange? IndicativeSalaryRange { get; set; }
     public ApplicationDto? RelatedApplication { get; set; }
     public ICollection<InterviewDto>? Interviews { get; set; }

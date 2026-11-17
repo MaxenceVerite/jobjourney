@@ -125,6 +125,45 @@ const generateOpportunitySummary = async (opportunityId: string): Promise<string
     }
 }
 
+export interface JobImportRequest {
+  url?: string;
+  text?: string;
+  useAiEnrichment?: boolean;
+}
+
+export interface JobImportResult {
+  roleTitle: string;
+  companyName: string;
+  location?: string;
+  industry?: string;
+  remoteCondition?: any;
+  applicationType?: any;
+  customApplicationType?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  salaryPeriodicity?: any;
+  description?: string;
+  sourceUrl?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  keySkills: string[];
+  success: boolean;
+  extractionMethod: string;
+  isProtectedDomain: boolean;
+  protectedDomainName?: string;
+  message?: string;
+}
+
+const scrapeJob = async (request: JobImportRequest): Promise<JobImportResult> => {
+  try {
+    const response = await myJobBoardApiClient.post<JobImportResult>(`${opportunitiesRessourcePath}/scrape`, request);
+    return response.data;
+  } catch (error) {
+    console.error("Erreur lors de l'extraction de l'annonce :", error);
+    throw error;
+  }
+};
+
 export {
     getOpportunities,
     getOpportunity,
@@ -136,5 +175,6 @@ export {
     updateInterview,
     updateOpportunityDocuments,
     updateOpportunityInterviewInterlocutors,
-    generateOpportunitySummary
+    generateOpportunitySummary,
+    scrapeJob
 }

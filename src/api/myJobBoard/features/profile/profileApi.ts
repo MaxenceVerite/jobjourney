@@ -17,6 +17,18 @@ export interface UserProfile {
     cityCode?: string;
     latitude?: number;
     longitude?: number;
+
+    // Career DNA & Psychological Matcher fields
+    targetHorizonRole?: string;
+    compactCareerManifesto?: string;
+    weightSalary?: number;
+    weightTechChallenge?: number;
+    weightWorkLifeBalance?: number;
+    weightCareerGrowth?: number;
+    enableTradeOffAlerts?: boolean;
+    coreSkills?: string[];
+    desiredSkills?: string[];
+    vetoKeywords?: string[];
 }
 
 const profilePath = "/api/profile";

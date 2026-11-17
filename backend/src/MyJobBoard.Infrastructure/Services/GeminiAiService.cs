@@ -193,7 +193,9 @@ public class GeminiAiService : IAiService
         if (usage != null && usage.RequestsCount >= _settings.MaxRequestsPerDay)
             throw new Exception("AI quota exceeded for today.");
 
-        var systemInstruction = "Tu es un coach carrière expert. Tu reçois des données brutes sur une opportunité d'emploi au format JSON. Tu dois produire un résumé stratégique concis en Markdown, en FRANÇAIS, pour aider le candidat à se préparer pour son prochain échange (entretien ou négociation). Structure ta réponse ainsi :\n\n## 🎯 Points clés de l'offre\n*(résumé ultra-court du poste et de l'entreprise)*\n\n## 💬 Ce qu'il faut retenir des échanges\n*(synthèse des notes et entretiens passés)*\n\n## 🚀 Arguments à valoriser\n*(match entre le profil/CV et l'offre, points forts à mettre en avant)*\n\n## ❓ Questions stratégiques à poser\n*(3 questions pertinentes pour le prochain échange)*\n\nSois concis. Évite les formulations génériques. Adapte ton conseil à l'étape actuelle du process.";
+        var systemInstruction = jsonContext.Contains("assistant de recrutement")
+            ? "Tu es un assistant de recrutement expert. Analyse l'offre d'emploi et extrait les données en JSON STRICT valide."
+            : "Tu es un coach carrière expert. Tu reçois des données brutes sur une opportunité d'emploi au format JSON. Tu dois produire un résumé stratégique concis en Markdown, en FRANÇAIS, pour aider le candidat à se préparer pour son prochain échange (entretien ou négociation). Structure ta réponse ainsi :\n\n## 🎯 Points clés de l'offre\n*(résumé ultra-court du poste et de l'entreprise)*\n\n## 💬 Ce qu'il faut retenir des échanges\n*(synthèse des notes et entretiens passés)*\n\n## 🚀 Arguments à valoriser\n*(match entre le profil/CV et l'offre, points forts à mettre en avant)*\n\n## ❓ Questions stratégiques à poser\n*(3 questions pertinentes pour le prochain échange)*\n\nSois concis. Évite les formulations génériques. Adapte ton conseil à l'étape actuelle du process.";
 
         var requestBody = new
         {
@@ -234,5 +236,95 @@ public class GeminiAiService : IAiService
         await _context.SaveChangesAsync(default);
 
         return textResult ?? string.Empty;
+    }
+
+    public async Task<string> EvaluateBatchTradeOffsAsync(string batchPromptJson, string userId)
+    {
+        var today = DateTime.UtcNow.Date;
+        AiUsage? usage = null;
+        var userSettings = await _context.UserSettings.FirstOrDefaultAsync(s => s.UserId == userId);
+        var apiKey = userSettings?.AiApiKey;
+        var usingCustomKey = !string.IsNullOrEmpty(apiKey);
+
+        if (!usingCustomKey)
+        {
+            apiKey = _settings.GeminiApiKey;
+            if (string.IsNullOrEmpty(apiKey))
+                throw new InvalidOperationException("Gemini API Key is not configured.");
+
+            usage = await _context.AiUsages.FirstOrDefaultAsync(u => u.UserId == userId && u.Date == today);
+            if (usage != null && usage.RequestsCount >= _settings.MaxRequestsPerDay)
+                throw new Exception("AI quota exceeded for today.");
+        }
+
+        var systemPrompt = "Tu es un coach carrière et expert en recrutement bienveillant et réaliste. " +
+                           "Tu reçois les données d'un candidat (ambition, stack, priorités) et un lot d'offres d'emploi présélectionnées avec leurs atouts et leurs compromis/frictions. " +
+                           "Pour chaque offre, tu dois fournir un arbitrage psychologique honnête et un pitch de candidature court et impactant. " +
+                           "Tu dois répondre STRICTEMENT au format JSON contenant un tableau 'evaluations' d'objets avec EXACTEMENT ces clés :\n" +
+                           "- 'offerId': l'identifiant de l'offre (string)\n" +
+                           "- 'verdictArbitrage': 1 à 2 phrases max analysant le compromis (ex: pourquoi le salaire ou le rôle compense le présentiel, ou pourquoi cette opportunité propulse sa carrière)\n" +
+                           "- 'pitchAccroche': 1 à 2 phrases d'accroche percutantes à adresser au recruteur reliant le profil du candidat au besoin de l'offre.\n" +
+                           "Rédige impérativement en FRANÇAIS.";
+
+        var requestBody = new
+        {
+            contents = new[]
+            {
+                new
+                {
+                    parts = new[]
+                    {
+                        new { text = $"{systemPrompt}\n\nDonnées du lot :\n{batchPromptJson}" }
+                    }
+                }
+            },
+            generationConfig = new
+            {
+                response_mime_type = "application/json"
+            }
+        };
+
+        var jsonBody = JsonSerializer.Serialize(requestBody);
+        var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+
+        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={apiKey}";
+        var response = await _httpClient.PostAsync(url, content);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Gemini API Error ({response.StatusCode}): {errorContent}");
+        }
+
+        var responseJson = await response.Content.ReadAsStringAsync();
+        using var jsonDoc = JsonDocument.Parse(responseJson);
+        var textResult = jsonDoc.RootElement
+            .GetProperty("candidates")[0]
+            .GetProperty("content")
+            .GetProperty("parts")[0]
+            .GetProperty("text")
+            .GetString();
+
+        if (!usingCustomKey)
+        {
+            if (usage == null)
+            {
+                usage = new AiUsage
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    Date = today,
+                    RequestsCount = 1
+                };
+                _context.AiUsages.Add(usage);
+            }
+            else
+            {
+                usage.RequestsCount++;
+                _context.AiUsages.Update(usage);
+            }
+            await _context.SaveChangesAsync(default);
+        }
+
+        return textResult ?? "{}";
     }
 }

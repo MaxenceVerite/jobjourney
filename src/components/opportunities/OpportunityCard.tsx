@@ -7,6 +7,7 @@ import {
   IconButton,
   Rating,
   Grid,
+  Chip,
   alpha,
   useTheme,
 } from "@mui/material";
@@ -66,40 +67,75 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({ opportunity }) => {
         <Grid onClick={() => handleNavOpportunity(opportunity.id!)} item xs={12} sm={7} md={8} display="flex" alignItems="center" sx={{ cursor: 'pointer' }}>
           <Avatar
             alt={companyName}
-            src={opportunityCompany?.websiteUrl}
-            sx={{ width: {xs: 48, sm: 60}, height: {xs: 48, sm: 60}, mr: 2, flexShrink: 0 }}
+            src={opportunity.companyLogoUrl || opportunityCompany?.websiteUrl}
+            sx={{ width: { xs: 48, sm: 60 }, height: { xs: 48, sm: 60 }, mr: 2, flexShrink: 0, bgcolor: "background.paper" }}
           />
-          <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", minWidth: 0, gap: 1 }}>
-            <Typography
-              noWrap
-              fontWeight={600}
-              variant="h6"
-              color="secondary"
-              sx={{
-                fontSize: {xs: "1rem", sm: "1.1rem"},
-                "&:hover": {
-                  textDecoration: "underline",
-                },
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                opportunity.companyId
-                  ? navigate(`/sheets/companies/${opportunity.companyId}`)
-                  : undefined;
-              }}
-            >
-              {companyName}
-            </Typography>
-            <Circle color="primary" sx={{ fontSize: "6px", display: {xs: "none", sm: "block"} }} />
-            <Typography
-              noWrap
-              fontWeight={700}
-              variant="h6"
-              color="primary"
-              sx={{ fontSize: {xs: "1rem", sm: "1.2rem"}, width: {xs: "100%", sm: "auto"} }}
-            >
-              {opportunity.roleTitle}
-            </Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", minWidth: 0, gap: 0.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", minWidth: 0, gap: 1 }}>
+              <Typography
+                noWrap
+                fontWeight={600}
+                variant="h6"
+                color="secondary"
+                sx={{
+                  fontSize: { xs: "0.95rem", sm: "1.05rem" },
+                  "&:hover": {
+                    textDecoration: "underline",
+                  },
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  opportunity.companyId
+                    ? navigate(`/sheets/companies/${opportunity.companyId}`)
+                    : undefined;
+                }}
+              >
+                {companyName}
+              </Typography>
+              <Circle color="primary" sx={{ fontSize: "6px", display: { xs: "none", sm: "block" } }} />
+              <Typography
+                noWrap
+                fontWeight={700}
+                variant="h6"
+                color="primary"
+                sx={{ fontSize: { xs: "1rem", sm: "1.2rem" }, width: { xs: "100%", sm: "auto" } }}
+              >
+                {opportunity.roleTitle}
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.75, mt: 0.25 }}>
+              {opportunity.contractType && (
+                <Chip
+                  label={opportunity.contractType}
+                  size="small"
+                  variant="filled"
+                  color="info"
+                  sx={{ fontWeight: 600, height: 22, fontSize: "0.72rem" }}
+                />
+              )}
+              {opportunity.sourceJobBoard && (
+                <Chip
+                  label={opportunity.sourceJobBoard}
+                  size="small"
+                  variant="outlined"
+                  sx={{ height: 22, fontSize: "0.72rem", borderColor: alpha(theme.palette.text.primary, 0.2) }}
+                />
+              )}
+              {opportunity.skills && opportunity.skills.slice(0, 3).map((skill) => (
+                <Chip
+                  key={skill}
+                  label={skill}
+                  size="small"
+                  sx={{ height: 22, fontSize: "0.72rem", bgcolor: alpha(theme.palette.primary.main, 0.08), color: theme.palette.primary.main }}
+                />
+              ))}
+              {opportunity.skills && opportunity.skills.length > 3 && (
+                <Typography variant="caption" color="textSecondary" sx={{ fontSize: "0.72rem", alignSelf: "center" }}>
+                  +{opportunity.skills.length - 3}
+                </Typography>
+              )}
+            </Box>
           </Box>
         </Grid>
         <Grid

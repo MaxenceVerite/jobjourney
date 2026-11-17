@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Job Journey</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    body {
+      width: 360px;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+      color: white;
+    }
+    .title {
+      font-size: 15px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a5b4fc, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .source-tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: rgba(99, 102, 241, 0.2);
+      color: #c7d2fe;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    .card {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+      backdrop-filter: blur(10px);
+    }
+    .job-header {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .company-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      background: #1e293b;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      color: #94a3b8;
+      flex-shrink: 0;
+    }
+    .job-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.3;
+      margin-bottom: 4px;
+    }
+    .company-name {
+      font-size: 12px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .badge {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #cbd5e1;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .badge.contract {
+      background: rgba(14, 165, 233, 0.2);
+      color: #7dd3fc;
+      border-color: rgba(14, 165, 233, 0.3);
+      font-weight: 600;
+    }
+    .btn {
+      width: 100%;
+      padding: 11px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      transform: translateY(-1px);
+    }
+    .status {
+      text-align: center;
+      font-size: 12px;
+      margin-top: 10px;
+      color: #94a3b8;
+    }
+    .status.success {
+      color: #34d399;
+      font-weight: 600;
+    }
+    .status.error {
+      color: #f87171;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand">
+      <div class="logo-badge">JJ</div>
+      <div class="title">Job Journey</div>
+    </div>
+    <div id="sourceTag" class="source-tag">Détection...</div>
+  </div>
+
+  <div id="jobCard" class="card">
+    <div class="job-header">
+      <img id="logoImg" class="company-logo" style="display:none;" />
+      <div id="logoFallback" class="company-logo">💼</div>
+      <div>
+        <div id="roleTitle" class="job-title">Analyse en cours...</div>
+        <div id="companyName" class="company-name">Recherche des informations</div>
+      </div>
+    </div>
+    <div id="badgesContainer" class="badges"></div>
+  </div>
+
+  <button id="importBtn" class="btn btn-primary">
+    <span>🚀 Importer dans Job Journey</span>
+  </button>
+
+  <div id="statusMessage" class="status"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

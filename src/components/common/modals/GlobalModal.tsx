@@ -6,11 +6,11 @@ import { Close } from "@mui/icons-material";
 
 const CustomModal = ({ title, isOpen, onClose, children }) => {
   return (
-    <Dialog sx={{
-        maxWidth: "100%", 
-        width: "auto",     
-        minWidth: 300,
-    }} open={isOpen} onClose={onClose}
+    <Dialog
+      fullWidth
+      maxWidth="md"
+      open={isOpen}
+      onClose={onClose}
     componentsProps={{
         backdrop: {
           sx: {

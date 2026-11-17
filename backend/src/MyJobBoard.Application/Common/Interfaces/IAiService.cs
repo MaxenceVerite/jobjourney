@@ -7,4 +7,5 @@ public interface IAiService
     Task<string> GenerateCompanySummaryAsync(string companyName, string userId);
     Task<string> ParseLinkedInProfileAsync(string profileText, string userId);
     Task<string> GenerateOpportunitySummaryAsync(string jsonContext, string userId);
+    Task<string> EvaluateBatchTradeOffsAsync(string batchPromptJson, string userId);
 }

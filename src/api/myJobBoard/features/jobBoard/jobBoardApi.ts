@@ -49,6 +49,52 @@ export interface SearchParams {
   page?: number;
 }
 
+export interface SmartMatchOffer {
+  id: string;
+  title: string;
+  companyName: string;
+  companyLogoUrl?: string;
+  location?: string;
+  distanceKm?: number;
+  contractType?: string;
+  salaryText?: string;
+  description?: string;
+  externalUrl?: string;
+  publishedAt?: string;
+
+  globalFitScore: number;
+  techFitScore: number;
+  ambitionFitScore: number;
+  conditionsFitScore: number;
+
+  hasSignificantTradeOff: boolean;
+  matchCategory: "StandardMatch" | "PerfectMatch" | "TradeOffOpportunity" | "CareerAccelerator";
+  strongPoints: string[];
+  frictionPoints: string[];
+
+  aiCoachVerdict?: string;
+  tailoredPitch?: string;
+
+  originalOffer?: FranceTravailJobOffer;
+}
+
+export interface SmartMatchSearchRequest {
+  keyword?: string;
+  rayon?: number;
+  cityCode?: string;
+  latitude?: number;
+  longitude?: number;
+  includeAiVerdict?: boolean;
+  limit?: number;
+}
+
+export interface SmartMatchSearchResponse {
+  matches: SmartMatchOffer[];
+  totalAnalyzed: number;
+  totalRetained: number;
+  candidateSummaryUsed: string;
+}
+
 export const searchOffers = async (searchParams: SearchParams): Promise<FranceTravailSearchResponse> => {
   const params = new URLSearchParams();
   if (searchParams.keyword) params.append('keyword', searchParams.keyword);
@@ -62,5 +108,10 @@ export const searchOffers = async (searchParams: SearchParams): Promise<FranceTr
   params.append('page', (searchParams.page || 1).toString());
 
   const response = await myJobBoardApiClient.get(`/api/jobboard/search?${params.toString()}`);
+  return response.data;
+};
+
+export const getSmartMatches = async (request: SmartMatchSearchRequest): Promise<SmartMatchSearchResponse> => {
+  const response = await myJobBoardApiClient.post('/api/jobboard/smart-matches', request);
   return response.data;
 };

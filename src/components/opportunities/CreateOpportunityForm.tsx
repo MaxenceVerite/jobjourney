@@ -8,6 +8,9 @@ import {
   Box,
   Typography,
   Grid,
+  Chip,
+  Stack,
+  InputAdornment,
 } from "@mui/material";
 import Opportunity, {
   EOpportunityState,
@@ -18,6 +21,7 @@ import { useDispatch } from "react-redux";
 import { createOpportunity } from "../../store/slices/opportunitySlice";
 import { useTranslation } from "react-i18next";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import EuroRoundedIcon from "@mui/icons-material/EuroRounded";
 
 interface CreateOpportunityFormProps {
   onClose: () => void;
@@ -36,19 +40,59 @@ const CreateOpportunityForm = ({
     lastUpdateDate: new Date(),
     state: initialState || EOpportunityState.DRAFT,
     remoteCondition: RemoteCondition.Office,
+    contractType: "CDI",
+    sourceJobBoard: undefined,
+    skills: [],
   });
+
+  const [salaryMin, setSalaryMin] = useState<string>("");
+  const [salaryMax, setSalaryMax] = useState<string>("");
+  const [skillInput, setSkillInput] = useState<string>("");
 
   const dispatch = useDispatch<any>();
   const { t } = useTranslation();
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: any) => {
     const { name, value } = e.target;
     setOpportunityData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleAddSkill = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && skillInput.trim()) {
+      e.preventDefault();
+      const trimmed = skillInput.trim();
+      if (!opportunityData.skills?.includes(trimmed)) {
+        setOpportunityData((prev) => ({
+          ...prev,
+          skills: [...(prev.skills || []), trimmed],
+        }));
+      }
+      setSkillInput("");
+    }
+  };
+
+  const handleRemoveSkill = (skillToRemove: string) => {
+    setOpportunityData((prev) => ({
+      ...prev,
+      skills: (prev.skills || []).filter((s) => s !== skillToRemove),
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(createOpportunity({ opportunity: opportunityData }));
+    const minVal = salaryMin ? parseFloat(salaryMin.replace(/\s+/g, "")) : undefined;
+    const maxVal = salaryMax ? parseFloat(salaryMax.replace(/\s+/g, "")) : undefined;
+
+    const finalOpp: Opportunity = {
+      ...opportunityData,
+      indicativeSalaryRange: minVal || maxVal ? {
+        min: minVal || maxVal || 0,
+        max: maxVal,
+        periodicity: "Yearly" as any,
+      } : undefined,
+    };
+
+    dispatch(createOpportunity({ opportunity: finalOpp }));
     onSubmit();
   };
 
@@ -60,10 +104,10 @@ const CreateOpportunityForm = ({
     <Container maxWidth="sm" sx={{ py: {xs: 1, sm: 2}, px: {xs: 1, sm: 3} }}>
       <Box component="form" onSubmit={handleSubmit} noValidate>
         <Typography variant="body2" color="text.secondary" mb={3} sx={{ fontSize: {xs: "0.85rem", sm: "0.875rem"} }}>
-          Remplissez les informations ci-dessous pour ajouter une nouvelle opportunité à votre tableau.
+          Remplissez les informations ci-dessous pour ajouter manuellement une opportunité à votre tableau.
         </Typography>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={2.5}>
           <Grid item xs={12}>
             <FormControl fullWidth>
               <CompanyPicker onCompanySelect={handleCompanySelect} />
@@ -75,12 +119,29 @@ const CreateOpportunityForm = ({
               required
               fullWidth
               label="Titre du poste"
-              placeholder="Ex: Développeur Fullstack React"
+              placeholder="Ex: Développeur Fullstack C# / React"
               name="roleTitle"
               variant="outlined"
               value={opportunityData.roleTitle}
               onChange={handleInputChange}
             />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              select
+              label="Type de contrat"
+              name="contractType"
+              value={opportunityData.contractType || "CDI"}
+              onChange={handleInputChange}
+            >
+              {["CDI", "CDD", "Freelance", "Stage", "Alternance", "Intérim", "Autre"].map((type) => (
+                <MenuItem key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
 
           <Grid item xs={12} sm={6}>
@@ -102,18 +163,99 @@ const CreateOpportunityForm = ({
             </TextField>
           </Grid>
 
+          <Grid item xs={6}>
+            <TextField
+              fullWidth
+              label="Salaire Min (€ brut/an)"
+              placeholder="Ex: 45000"
+              value={salaryMin}
+              onChange={(e) => setSalaryMin(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EuroRoundedIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+
+          <Grid item xs={6}>
+            <TextField
+              fullWidth
+              label="Salaire Max (€ brut/an)"
+              placeholder="Ex: 55000"
+              value={salaryMax}
+              onChange={(e) => setSalaryMax(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EuroRoundedIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              select
+              label="Provenance (Job Board)"
+              name="sourceJobBoard"
+              value={opportunityData.sourceJobBoard || ""}
+              onChange={handleInputChange}
+            >
+              <MenuItem value="">Direct / Autre</MenuItem>
+              <MenuItem value="Welcome to the Jungle">Welcome to the Jungle</MenuItem>
+              <MenuItem value="LinkedIn">LinkedIn</MenuItem>
+              <MenuItem value="Indeed">Indeed</MenuItem>
+              <MenuItem value="Apec">Apec</MenuItem>
+              <MenuItem value="France Travail">France Travail</MenuItem>
+            </TextField>
+          </Grid>
+
           <Grid item xs={12} sm={6}>
             <TextField
               id="startDate"
-              label="Date de début du processus"
+              label="Date de début"
               type="date"
               name="startDate"
-              value={opportunityData.startDate}
+              value={
+                opportunityData.startDate instanceof Date
+                  ? opportunityData.startDate.toISOString().split("T")[0]
+                  : opportunityData.startDate || ""
+              }
               onChange={handleInputChange}
               InputLabelProps={{ shrink: true }}
               variant="outlined"
               fullWidth
             />
+          </Grid>
+
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Compétences (tapez Entrée pour ajouter)"
+              placeholder="Ex: React, .NET, TypeScript..."
+              value={skillInput}
+              onChange={(e) => setSkillInput(e.target.value)}
+              onKeyDown={handleAddSkill}
+            />
+            {opportunityData.skills && opportunityData.skills.length > 0 && (
+              <Stack direction="row" spacing={0.8} flexWrap="wrap" gap={0.8} mt={1}>
+                {opportunityData.skills.map((skill) => (
+                  <Chip
+                    key={skill}
+                    label={skill}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    onDelete={() => handleRemoveSkill(skill)}
+                  />
+                ))}
+              </Stack>
+            )}
           </Grid>
         </Grid>
 

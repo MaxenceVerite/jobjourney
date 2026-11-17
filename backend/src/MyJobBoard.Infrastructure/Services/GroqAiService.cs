@@ -134,7 +134,9 @@ public class GroqAiService : IAiService
         if (string.IsNullOrEmpty(apiKey))
             throw new InvalidOperationException("Groq API Key is not configured.");
 
-        var systemMessage = "Tu es un coach carrière expert. Tu reçois des données brutes sur une opportunité d'emploi au format JSON. Tu dois produire un résumé stratégique concis en Markdown, en FRANÇAIS. Structure : ## 🎯 Points clés de l'offre / ## 💬 Ce qu'il faut retenir des échanges / ## 🚀 Arguments à valoriser / ## ❓ Questions stratégiques à poser. Sois concis et adapté à l'étape actuelle.";
+        var systemMessage = jsonContext.Contains("assistant de recrutement")
+            ? "Tu es un assistant de recrutement expert. Analyse l'offre d'emploi et extrait les données en JSON STRICT valide."
+            : "Tu es un coach carrière expert. Tu reçois des données brutes sur une opportunité d'emploi au format JSON. Tu dois produire un résumé stratégique concis en Markdown, en FRANÇAIS. Structure : ## 🎯 Points clés de l'offre / ## 💬 Ce qu'il faut retenir des échanges / ## 🚀 Arguments à valoriser / ## ❓ Questions stratégiques à poser. Sois concis et adapté à l'étape actuelle.";
 
         var requestBody = new
         {
@@ -169,5 +171,53 @@ public class GroqAiService : IAiService
             .GetString();
 
         return textResult ?? string.Empty;
+    }
+
+    public async Task<string> EvaluateBatchTradeOffsAsync(string batchPromptJson, string userId)
+    {
+        var apiKey = _settings.GroqApiKey;
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            throw new InvalidOperationException("Groq API Key is not configured.");
+        }
+
+        var systemPrompt = "Tu es un coach carrière et expert en recrutement. " +
+                           "Pour chaque offre, analyse le compromis et fournis un pitch court. " +
+                           "Réponds au format JSON avec un tableau 'evaluations' contenant: offerId, verdictArbitrage, pitchAccroche en Français.";
+
+        var requestBody = new
+        {
+            model = "llama-3.3-70b-versatile",
+            messages = new[]
+            {
+                new { role = "system", content = systemPrompt },
+                new { role = "user", content = batchPromptJson }
+            },
+            response_format = new { type = "json_object" }
+        };
+
+        var jsonBody = JsonSerializer.Serialize(requestBody);
+        var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.groq.com/openai/v1/chat/completions");
+        request.Headers.Add("Authorization", $"Bearer {apiKey}");
+        request.Content = content;
+
+        var response = await _httpClient.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Groq API Error ({response.StatusCode}): {errorContent}");
+        }
+
+        var responseJson = await response.Content.ReadAsStringAsync();
+        using var jsonDoc = JsonDocument.Parse(responseJson);
+        var textResult = jsonDoc.RootElement
+            .GetProperty("choices")[0]
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString();
+
+        return textResult ?? "{}";
     }
 }

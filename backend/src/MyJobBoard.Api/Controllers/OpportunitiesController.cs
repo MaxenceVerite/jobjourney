@@ -18,12 +18,27 @@ public class OpportunitiesController : ControllerBase
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAiService _aiService;
+    private readonly IJobScraperService _jobScraperService;
 
-    public OpportunitiesController(IApplicationDbContext context, ICurrentUserService currentUserService, IAiService aiService)
+    public OpportunitiesController(
+        IApplicationDbContext context,
+        ICurrentUserService currentUserService,
+        IAiService aiService,
+        IJobScraperService jobScraperService)
     {
         _context = context;
         _currentUserService = currentUserService;
         _aiService = aiService;
+        _jobScraperService = jobScraperService;
+    }
+
+    [AllowAnonymous]
+    [HttpPost("scrape")]
+    public async Task<ActionResult<JobImportResultDto>> ScrapeJob([FromBody] JobImportRequestDto request)
+    {
+        var userId = _currentUserService.UserId ?? string.Empty;
+        var result = await _jobScraperService.ScrapeJobAsync(request, userId);
+        return Ok(result);
     }
 
     [HttpGet]
@@ -85,7 +100,14 @@ public class OpportunitiesController : ControllerBase
             UserId = userId,
             SalaryRangeMin = dto.IndicativeSalaryRange?.Min,
             SalaryRangeMax = dto.IndicativeSalaryRange?.Max,
-            SalaryRangePeriodicity = dto.IndicativeSalaryRange?.Periodicity
+            SalaryRangePeriodicity = dto.IndicativeSalaryRange?.Periodicity,
+            ContractType = dto.ContractType,
+            SourceJobBoard = dto.SourceJobBoard,
+            ExternalReference = dto.ExternalReference,
+            CompanyLogoUrl = dto.CompanyLogoUrl,
+            ExperienceLevel = dto.ExperienceLevel,
+            PublishedAt = dto.PublishedAt,
+            Skills = dto.Skills ?? new List<string>()
         };
 
         if (dto.RelatedApplication != null)
@@ -204,6 +226,13 @@ public class OpportunitiesController : ControllerBase
         opportunity.SalaryRangeMin = dto.IndicativeSalaryRange?.Min;
         opportunity.SalaryRangeMax = dto.IndicativeSalaryRange?.Max;
         opportunity.SalaryRangePeriodicity = dto.IndicativeSalaryRange?.Periodicity;
+        opportunity.ContractType = dto.ContractType;
+        opportunity.SourceJobBoard = dto.SourceJobBoard;
+        opportunity.ExternalReference = dto.ExternalReference;
+        opportunity.CompanyLogoUrl = dto.CompanyLogoUrl;
+        opportunity.ExperienceLevel = dto.ExperienceLevel;
+        opportunity.PublishedAt = dto.PublishedAt;
+        opportunity.Skills = dto.Skills ?? new List<string>();
 
         if (dto.RelatedApplication != null)
         {
@@ -495,6 +524,13 @@ public class OpportunitiesController : ControllerBase
             ArchiveReason = o.ArchiveReason,
             ArchiveFeedback = o.ArchiveFeedback,
             ArchivedDate = o.ArchivedDate,
+            ContractType = o.ContractType,
+            SourceJobBoard = o.SourceJobBoard,
+            ExternalReference = o.ExternalReference,
+            CompanyLogoUrl = o.CompanyLogoUrl,
+            ExperienceLevel = o.ExperienceLevel,
+            PublishedAt = o.PublishedAt,
+            Skills = o.Skills ?? new List<string>(),
             IndicativeSalaryRange = o.SalaryRangeMin.HasValue ? new SalaryRange
             {
                 Min = o.SalaryRangeMin.Value,

@@ -71,18 +71,23 @@ export const checkSession = createAsyncThunk(
 
 
 
+import { clearTokens } from '../../api/myJobBoard/tokenManager';
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-
+    setConnected(state, action: PayloadAction<boolean>) {
+      state.isConnected = action.payload;
+      state.isLoading = false;
+      state.error = null;
+    },
     logout(state) {
       state.isConnected = false;
       state.isLoading = false;
       state.error = null;
-
+      clearTokens();
     }
-
   },
   extraReducers: (builder) => {
     builder
@@ -114,16 +119,17 @@ const authSlice = createSlice({
       .addCase(checkSession.fulfilled, (state) => {
         state.isConnected = true;
         state.isLoading = false;
-      } )
+      })
       .addCase(checkSession.pending, (state) => {
         state.isLoading = true;
-      } )
+      })
       .addCase(checkSession.rejected, (state) => {
         state.isConnected = false;
         state.isLoading = false;
-      } )
+        clearTokens();
+      });
   },
 });
 
-export const { logout } = authSlice.actions;
+export const { logout, setConnected } = authSlice.actions;
 export default authSlice.reducer;

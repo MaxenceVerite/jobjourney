@@ -59,4 +59,17 @@ public class ResilientAiService : IAiService
             return await _fallbackService.GenerateOpportunitySummaryAsync(jsonContext, userId);
         }
     }
+
+    public async Task<string> EvaluateBatchTradeOffsAsync(string batchPromptJson, string userId)
+    {
+        try
+        {
+            return await _primaryService.EvaluateBatchTradeOffsAsync(batchPromptJson, userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Primary AI service failed for batch trade-off evaluation. Falling back to Groq.");
+            return await _fallbackService.EvaluateBatchTradeOffsAsync(batchPromptJson, userId);
+        }
+    }
 }
