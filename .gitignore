@@ -29,3 +29,6 @@ backend/src/**/obj/
 backend/src/**/appsettings.json
 test_groq.js
 backend/src/MyJobBoard.Api/test_groq.js
+
+# Portfolio screenshots
+screen/
